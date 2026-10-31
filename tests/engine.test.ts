@@ -208,7 +208,7 @@ describe('createEngine end-to-end with fake OCR', () => {
     expect(realServices.models).toBeDefined()
   })
 
-  it('passes near fallback through to vision and replaces target when confidence >= 0.55', async () => {
+  it('passes near fallback through to vision and replaces target when confidence is 0.8', async () => {
     fakeOcrResult = {
       fullText: 'Type a message Camera Beta',
       words: [
@@ -249,6 +249,35 @@ describe('createEngine end-to-end with fake OCR', () => {
       const step = res.lesson.parts[0].steps[0]
       expect(step.target.source).toBe('vision')
       expect(step.target.confidence).toBe(0.8)
+    }
+  })
+
+  it('keeps fallback target when vision confidence is exactly 0.55 (below the 0.8 threshold)', async () => {
+    fakeOcrResult = {
+      fullText: 'Type a message Camera Beta',
+      words: [
+        { text: 'Type', box: { x: 0.1, y: 0.9, w: 0.1, h: 0.05 }, confidence: 90 },
+        { text: 'a', box: { x: 0.2, y: 0.9, w: 0.05, h: 0.05 }, confidence: 90 },
+        { text: 'message', box: { x: 0.26, y: 0.9, w: 0.1, h: 0.05 }, confidence: 90 },
+      ],
+      width: 390,
+      height: 844,
+    }
+
+    const midConfidenceVision = async (_img: Blob, phrase: string) => ({
+      box: { x: 0.5, y: 0.5, w: 0.1, h: 0.1 },
+      source: 'vision' as const,
+      confidence: 0.55,
+      label: phrase,
+    })
+
+    const engine = createEngine({ ocr: fakeOcr, library, vision: midConfidenceVision })
+    const res = await engine.analyze({ image: new Blob(), task: 'photo', redactions: [] })
+
+    expect(res.kind).toBe('lesson')
+    if (res.kind === 'lesson') {
+      const step = res.lesson.parts[0].steps[0]
+      expect(step.target.source).toBe('map-fallback')
     }
   })
 

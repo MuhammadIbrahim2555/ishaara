@@ -9,9 +9,17 @@ export interface TranslateModels {
   worker?: TranslateWorker
 }
 
+function dictionaryLookup(key: string): string | undefined {
+  return Object.prototype.hasOwnProperty.call(UI_DICTIONARY, key)
+    ? UI_DICTIONARY[key]
+    : undefined
+}
+
 /**
  * Creates the translation service.
- * Priority: Cache -> Dictionary (whole text) -> Dictionary (word-by-word) -> Worker Opus-MT -> Original text.
+ * Priority: Cache -> Dictionary (whole phrase) -> Dictionary (word-by-word)
+ *           -> local Opus-MT model via worker -> original text.
+ * Dictionary hits are instant and need no model.
  */
 export function createTranslate(models?: TranslateModels): TranslateService {
   const cache = new Map<string, string>()
@@ -27,36 +35,32 @@ export function createTranslate(models?: TranslateModels): TranslateService {
         return ''
       }
 
-      // Check whole text match in dictionary (case-insensitive)
-      const lower = trimmed.toLowerCase()
-      if (UI_DICTIONARY[lower]) {
-        const result = UI_DICTIONARY[lower]
+      // Whole phrase match (case-insensitive)
+      const whole = dictionaryLookup(trimmed.toLowerCase())
+      if (whole) {
+        cache.set(text, whole)
+        return whole
+      }
+
+      // Word-by-word: every word must be in the dictionary
+      const words = trimmed.split(/\s+/).filter(Boolean)
+      const translatedWords: string[] = []
+      let allMatched = words.length > 0
+      for (const word of words) {
+        const match = dictionaryLookup(word.toLowerCase())
+        if (!match) {
+          allMatched = false
+          break
+        }
+        translatedWords.push(match)
+      }
+      if (allMatched) {
+        const result = translatedWords.join(' ')
         cache.set(text, result)
         return result
       }
 
-      // Word-by-word match: split text by whitespace into words
-      const words = trimmed.split(/\s+/).filter(Boolean)
-      if (words.length > 0) {
-        const translatedWords: string[] = []
-        let allMatched = true
-        for (const word of words) {
-          const match = UI_DICTIONARY[word.toLowerCase()]
-          if (match) {
-            translatedWords.push(match)
-          } else {
-            allMatched = false
-            break
-          }
-        }
-        if (allMatched && translatedWords.length === words.length) {
-          const result = translatedWords.join(' ')
-          cache.set(text, result)
-          return result
-        }
-      }
-
-      // Fall back to worker translation if provided
+      // Opus-MT model (local). Null or a thrown error falls back to the original text.
       if (models?.worker?.translate) {
         try {
           const translated = await models.worker.translate(text)
@@ -65,11 +69,10 @@ export function createTranslate(models?: TranslateModels): TranslateService {
             return translated
           }
         } catch {
-          // Worker threw or failed: proceed to fallback
+          // Worker failed: the worker already emitted status 'error'
         }
       }
 
-      // Fall back to original text
       cache.set(text, text)
       return text
     },

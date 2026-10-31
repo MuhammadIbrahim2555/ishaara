@@ -8,11 +8,30 @@ import {
 } from '@huggingface/transformers'
 import type { LoadProgress, ModelId } from '@/types/contracts'
 
+// Local, self-hosted models live under public/models/ and are served from /models/.
+// Whisper and Florence-2 still come from the Hugging Face Hub, so remote stays on.
 env.allowLocalModels = false
+env.allowRemoteModels = true
 env.useBrowserCache = true
+
+// Self-heal: drop cached "model files" that are really HTML pages (an SPA fallback cached
+// by an older build), otherwise ONNX Runtime fails with "protobuf parsing failed" forever.
+void (async () => {
+  try {
+    const cache = await caches.open('transformers-cache')
+    for (const req of await cache.keys()) {
+      const res = await cache.match(req)
+      if (res?.headers.get('content-type')?.includes('text/html')) await cache.delete(req)
+    }
+  } catch {
+    // Cache Storage unavailable: nothing to clean.
+  }
+})()
 
 type ProgressCallback = (progress: LoadProgress) => void
 let progressSubscriber: ProgressCallback | null = null
+
+type Device = 'webgpu' | 'wasm'
 
 function emitProgress(progress: LoadProgress): void {
   if (progressSubscriber) {
@@ -22,6 +41,12 @@ function emitProgress(progress: LoadProgress): void {
       // Ignore callback dispatch failures across Comlink boundary
     }
   }
+}
+
+function errorMessage(err: unknown, fallback: string): string {
+  if (err instanceof Error && err.message) return err.message
+  if (typeof err === 'string' && err) return err
+  return fallback
 }
 
 function makeProgressTracker(model: ModelId) {
@@ -59,10 +84,8 @@ function makeProgressTracker(model: ModelId) {
   }
 }
 
-async function getDeviceAndDtype(): Promise<{
-  device: 'webgpu' | 'wasm'
-  dtype: 'fp16' | 'fp32' | 'q8'
-}> {
+/** WebGPU when an adapter can be requested, otherwise WASM. */
+async function detectDevice(): Promise<Device> {
   if (typeof navigator !== 'undefined') {
     const navGpu = (
       navigator as unknown as {
@@ -72,15 +95,13 @@ async function getDeviceAndDtype(): Promise<{
     if (navGpu && typeof navGpu.requestAdapter === 'function') {
       try {
         const adapter = await navGpu.requestAdapter()
-        if (adapter) {
-          return { device: 'webgpu', dtype: 'fp16' }
-        }
+        if (adapter) return 'webgpu'
       } catch {
-        // Fallback to WASM
+        // No usable adapter: use WASM
       }
     }
   }
-  return { device: 'wasm', dtype: 'q8' }
+  return 'wasm'
 }
 
 const loadPipeline = pipeline as unknown as (
@@ -114,61 +135,168 @@ type TtsPipeline = (
   text: string
 ) => Promise<{ audio?: Float32Array; sampling_rate?: number } | null>
 
-// Pipelines and models cache
+type FlorenceOptions = NonNullable<
+  Parameters<typeof Florence2ForConditionalGeneration.from_pretrained>[1]
+>
+
+// ---- Whisper load plans -------------------------------------------------
+
+interface WhisperAttempt {
+  modelId: string
+  dtype: unknown
+}
+
+interface WhisperPlan {
+  device: Device
+  attempts: WhisperAttempt[]
+}
+
+/** WebGPU: fp32 encoder + q4 decoder, the combination used by transformers.js browser demos. */
+const WHISPER_WEBGPU: WhisperPlan = {
+  device: 'webgpu',
+  attempts: [
+    {
+      modelId: 'onnx-community/whisper-base',
+      dtype: { encoder_model: 'fp32', decoder_model_merged: 'q4' },
+    },
+  ],
+}
+
+/** WASM: quantised tiny model, with a second repo id as fallback. */
+const WHISPER_WASM: WhisperPlan = {
+  device: 'wasm',
+  attempts: [
+    { modelId: 'onnx-community/whisper-tiny', dtype: 'q8' },
+    { modelId: 'Xenova/whisper-tiny', dtype: 'q8' },
+  ],
+}
+
+const WHISPER_CHUNK_SECONDS = 30
+const SAMPLE_RATE = 16000
+
+// ---- Florence-2 load plans ----------------------------------------------
+
+const FLORENCE_MODEL_ID = 'onnx-community/Florence-2-base-ft'
+
+/** WebGPU: fp16 vision/embeddings, q4 encoder/decoder. */
+const FLORENCE_WEBGPU = {
+  device: 'webgpu' as Device,
+  dtype: {
+    embed_tokens: 'fp16',
+    vision_encoder: 'fp16',
+    encoder_model: 'q4',
+    decoder_model_merged: 'q4',
+  },
+}
+
+/** WASM: q8 for all components. */
+const FLORENCE_WASM = {
+  device: 'wasm' as Device,
+  dtype: 'q8',
+}
+
+// ---- Local models (self-hosted under public/models/) ---------------------
+
+/** Opus-MT English -> Urdu (Helsinki-NLP), ONNX conversion hosted on the Hub. Apache-2.0. */
+const TRANSLATE_MODEL_ID = 'fintutto/opus-mt-en-ur'
+/** Meta MMS-TTS Urdu (facebook/mms-tts-urd-script_arabic), ONNX conversion on the Hub. CC-BY-NC-4.0. */
+const TTS_MODEL_ID = 'obaidasiaone/mms-tts-urd-onnx'
+
+const TRANSLATE_OPTIONS = { dtype: 'q8', device: 'wasm' }
+// Only a full-precision model.onnx is published for this repo.
+const TTS_OPTIONS = { dtype: 'fp32', device: 'wasm' }
+
+// ---- Cached pipelines and in-flight loads --------------------------------
+
 let whisperPipeline: WhisperPipeline | null = null
+let whisperLoading: Promise<WhisperPipeline> | null = null
 let florenceModel: FlorenceModel | null = null
 let florenceProcessor: FlorenceProcessor | null = null
+let florenceLoading: Promise<{
+  model: FlorenceModel
+  processor: FlorenceProcessor
+}> | null = null
 let translatePipeline: TranslationPipeline | null = null
-let translatePermanentlyFailed = false
+let translateLoading: Promise<TranslationPipeline> | null = null
 let ttsPipeline: TtsPipeline | null = null
-let ttsPermanentlyFailed = false
+let ttsLoading: Promise<TtsPipeline> | null = null
+
+async function loadWhisperPlan(
+  plan: WhisperPlan
+): Promise<{ pipe: WhisperPipeline; modelId: string }> {
+  let lastError: unknown = null
+  for (const attempt of plan.attempts) {
+    try {
+      const pipe = (await loadPipeline('automatic-speech-recognition', attempt.modelId, {
+        device: plan.device,
+        dtype: attempt.dtype,
+        progress_callback: makeProgressTracker('whisper'),
+      })) as WhisperPipeline
+      return { pipe, modelId: attempt.modelId }
+    } catch (err) {
+      lastError = err
+    }
+  }
+  throw lastError ?? new Error('Failed to load Whisper ASR')
+}
 
 async function getWhisper(): Promise<WhisperPipeline> {
   if (whisperPipeline) return whisperPipeline
+  if (whisperLoading) return whisperLoading
 
-  emitProgress({
-    model: 'whisper',
-    status: 'downloading',
-    progress: 0.05,
-    message: 'Loading Whisper ASR model...',
-  })
-
-  const { device, dtype } = await getDeviceAndDtype()
-  const candidates = [
-    'onnx-community/whisper-base',
-    'onnx-community/whisper-tiny',
-    'Xenova/whisper-tiny',
-  ]
-  let lastError: unknown = null
-
-  for (const modelId of candidates) {
+  whisperLoading = (async () => {
+    emitProgress({
+      model: 'whisper',
+      status: 'downloading',
+      progress: 0.05,
+      message: 'Loading Whisper ASR model...',
+    })
     try {
-      const p = (await loadPipeline('automatic-speech-recognition', modelId, {
-        device,
-        dtype: dtype === 'fp16' ? 'fp16' : dtype === 'q8' ? 'q8' : 'fp32',
-        progress_callback: makeProgressTracker('whisper'),
-      })) as WhisperPipeline
-      whisperPipeline = p
+      const device = await detectDevice()
+      let loaded: { pipe: WhisperPipeline; modelId: string }
+      if (device === 'webgpu') {
+        try {
+          loaded = await loadWhisperPlan(WHISPER_WEBGPU)
+        } catch {
+          // Single fallback: WebGPU config failed, use the WASM config once
+          loaded = await loadWhisperPlan(WHISPER_WASM)
+        }
+      } else {
+        loaded = await loadWhisperPlan(WHISPER_WASM)
+      }
+      whisperPipeline = loaded.pipe
       emitProgress({
         model: 'whisper',
         status: 'ready',
         progress: 1.0,
-        message: `Whisper ready (${modelId})`,
+        message: `Whisper ready (${loaded.modelId})`,
       })
-      return whisperPipeline
+      return loaded.pipe
     } catch (err) {
-      lastError = err
-      // Try next candidate
+      const message = errorMessage(err, 'Failed to load Whisper model')
+      emitProgress({ model: 'whisper', status: 'error', progress: 0, message })
+      throw err
+    } finally {
+      whisperLoading = null
     }
-  }
+  })()
 
-  emitProgress({
-    model: 'whisper',
-    status: 'error',
-    progress: 0,
-    message: lastError instanceof Error ? lastError.message : 'Failed to load Whisper model',
-  })
-  throw lastError ?? new Error('Failed to load Whisper ASR')
+  return whisperLoading
+}
+
+async function loadFlorenceModel(config: {
+  device: Device
+  dtype: unknown
+}): Promise<FlorenceModel> {
+  const options = {
+    device: config.device,
+    dtype: config.dtype,
+    progress_callback: makeProgressTracker('florence'),
+  } as unknown as FlorenceOptions
+  return (await Florence2ForConditionalGeneration.from_pretrained(
+    FLORENCE_MODEL_ID,
+    options
+  )) as unknown as FlorenceModel
 }
 
 async function getFlorence(): Promise<{
@@ -178,152 +306,148 @@ async function getFlorence(): Promise<{
   if (florenceModel && florenceProcessor) {
     return { model: florenceModel, processor: florenceProcessor }
   }
+  if (florenceLoading) return florenceLoading
 
-  emitProgress({
-    model: 'florence',
-    status: 'downloading',
-    progress: 0.05,
-    message: 'Loading Florence-2 vision model...',
-  })
-
-  const { device, dtype } = await getDeviceAndDtype()
-  const modelId = 'onnx-community/Florence-2-base-ft'
-
-  try {
-    florenceProcessor = (await AutoProcessor.from_pretrained(
-      modelId
-    )) as unknown as FlorenceProcessor
+  florenceLoading = (async () => {
+    emitProgress({
+      model: 'florence',
+      status: 'downloading',
+      progress: 0.05,
+      message: 'Loading Florence-2 vision model...',
+    })
     try {
-      florenceModel = (await Florence2ForConditionalGeneration.from_pretrained(
-        modelId,
-        {
-          device,
-          dtype: dtype === 'fp16' ? 'fp16' : dtype === 'q8' ? 'q8' : 'fp32',
-          progress_callback: makeProgressTracker('florence'),
-        }
-      )) as unknown as FlorenceModel
-    } catch (loadErr) {
-      if (device === 'webgpu' && dtype === 'fp16') {
-        // Fallback to fp32 or wasm
+      const device = await detectDevice()
+      const processor =
+        florenceProcessor ??
+        ((await AutoProcessor.from_pretrained(
+          FLORENCE_MODEL_ID
+        )) as unknown as FlorenceProcessor)
+
+      let model: FlorenceModel
+      if (device === 'webgpu') {
         try {
-          florenceModel =
-            (await Florence2ForConditionalGeneration.from_pretrained(modelId, {
-              device: 'webgpu',
-              dtype: 'fp32',
-              progress_callback: makeProgressTracker('florence'),
-            })) as unknown as FlorenceModel
+          model = await loadFlorenceModel(FLORENCE_WEBGPU)
         } catch {
-          florenceModel =
-            (await Florence2ForConditionalGeneration.from_pretrained(modelId, {
-              device: 'wasm',
-              dtype: 'q8',
-              progress_callback: makeProgressTracker('florence'),
-            })) as unknown as FlorenceModel
+          // Single fallback: WebGPU config failed, use the WASM config once
+          model = await loadFlorenceModel(FLORENCE_WASM)
         }
       } else {
-        throw loadErr
+        model = await loadFlorenceModel(FLORENCE_WASM)
       }
+
+      florenceProcessor = processor
+      florenceModel = model
+      emitProgress({
+        model: 'florence',
+        status: 'ready',
+        progress: 1.0,
+        message: 'Florence-2 ready',
+      })
+      return { model, processor }
+    } catch (err) {
+      const message = errorMessage(err, 'Failed to load Florence-2')
+      emitProgress({ model: 'florence', status: 'error', progress: 0, message })
+      throw err
+    } finally {
+      florenceLoading = null
     }
+  })()
 
-    emitProgress({
-      model: 'florence',
-      status: 'ready',
-      progress: 1.0,
-      message: 'Florence-2 ready',
-    })
-    return { model: florenceModel, processor: florenceProcessor }
-  } catch (err) {
-    emitProgress({
-      model: 'florence',
-      status: 'error',
-      progress: 0,
-      message: err instanceof Error ? err.message : 'Failed to load Florence-2',
-    })
-    throw err
-  }
+  return florenceLoading
 }
 
-async function getTranslator(): Promise<TranslationPipeline | null> {
-  if (translatePermanentlyFailed) return null
+async function getTranslator(): Promise<TranslationPipeline> {
   if (translatePipeline) return translatePipeline
+  if (translateLoading) return translateLoading
 
-  emitProgress({
-    model: 'translate',
-    status: 'downloading',
-    progress: 0.05,
-    message: 'Loading translation model...',
-  })
-
-  try {
-    translatePipeline = (await loadPipeline(
-      'translation',
-      'Xenova/opus-mt-en-ur',
-      {
+  translateLoading = (async () => {
+    emitProgress({
+      model: 'translate',
+      status: 'downloading',
+      progress: 0.05,
+      message: 'Loading translation model...',
+    })
+    try {
+      const pipe = (await loadPipeline('translation', TRANSLATE_MODEL_ID, {
+        ...TRANSLATE_OPTIONS,
         progress_callback: makeProgressTracker('translate'),
-      }
-    )) as TranslationPipeline
-    emitProgress({
-      model: 'translate',
-      status: 'ready',
-      progress: 1.0,
-      message: 'Translation model ready',
-    })
-    return translatePipeline
-  } catch (err) {
-    translatePermanentlyFailed = true
-    emitProgress({
-      model: 'translate',
-      status: 'error',
-      progress: 0,
-      message:
-        err instanceof Error ? err.message : 'Translation model unavailable',
-    })
-    return null
-  }
+      })) as TranslationPipeline
+      translatePipeline = pipe
+      emitProgress({
+        model: 'translate',
+        status: 'ready',
+        progress: 1.0,
+        message: 'Opus-MT ready',
+      })
+      return pipe
+    } catch (err) {
+      const message = errorMessage(err, 'Translation model failed to load')
+      emitProgress({ model: 'translate', status: 'error', progress: 0, message })
+      throw err
+    } finally {
+      translateLoading = null
+    }
+  })()
+
+  return translateLoading
 }
 
-async function getTts(): Promise<TtsPipeline | null> {
-  if (ttsPermanentlyFailed) return null
+async function getTts(): Promise<TtsPipeline> {
   if (ttsPipeline) return ttsPipeline
+  if (ttsLoading) return ttsLoading
 
-  emitProgress({
-    model: 'tts',
-    status: 'downloading',
-    progress: 0.05,
-    message: 'Loading Urdu TTS model...',
-  })
-
-  const candidates = [
-    'Xenova/mms-tts-urd',
-    'onnx-community/mms-tts-urd',
-    'Xenova/mms-tts-urd-script_arabic',
-  ]
-
-  for (const modelId of candidates) {
+  ttsLoading = (async () => {
+    emitProgress({
+      model: 'tts',
+      status: 'downloading',
+      progress: 0.05,
+      message: 'Loading Urdu TTS model...',
+    })
     try {
-      ttsPipeline = (await loadPipeline('text-to-speech', modelId, {
+      const pipe = (await loadPipeline('text-to-speech', TTS_MODEL_ID, {
+        ...TTS_OPTIONS,
         progress_callback: makeProgressTracker('tts'),
-      })) as unknown as TtsPipeline
+      })) as TtsPipeline
+      ttsPipeline = pipe
       emitProgress({
         model: 'tts',
         status: 'ready',
         progress: 1.0,
-        message: `TTS ready (${modelId})`,
+        message: 'MMS-TTS Urdu ready',
       })
-      return ttsPipeline
-    } catch {
-      // Try next candidate
+      return pipe
+    } catch (err) {
+      const message = errorMessage(err, 'Urdu TTS model failed to load')
+      emitProgress({ model: 'tts', status: 'error', progress: 0, message })
+      throw err
+    } finally {
+      ttsLoading = null
     }
-  }
+  })()
 
-  ttsPermanentlyFailed = true
-  emitProgress({
-    model: 'tts',
-    status: 'error',
-    progress: 0,
-    message: 'Urdu TTS model unavailable',
-  })
-  return null
+  return ttsLoading
+}
+
+function extractText(output: unknown): string {
+  if (!output) return ''
+  if (typeof output === 'string') return output
+  if (Array.isArray(output)) {
+    const first = output[0] as { text?: unknown } | undefined
+    return typeof first?.text === 'string' ? first.text : ''
+  }
+  const withText = output as { text?: unknown }
+  return typeof withText.text === 'string' ? withText.text : ''
+}
+
+function extractTranslation(output: unknown): string | null {
+  if (!output) return null
+  if (typeof output === 'string') return output
+  if (Array.isArray(output)) {
+    const first = output[0] as { translation_text?: unknown } | undefined
+    return typeof first?.translation_text === 'string' ? first.translation_text : null
+  }
+  const withText = output as { translation_text?: unknown }
+  return typeof withText.translation_text === 'string' ? withText.translation_text : null
 }
 
 const api = {
@@ -331,25 +455,30 @@ const api = {
     progressSubscriber = cb
   },
 
-  async getDevice(): Promise<'webgpu' | 'wasm'> {
-    const { device } = await getDeviceAndDtype()
-    return device
+  async getDevice(): Promise<Device> {
+    return detectDevice()
   },
 
   async transcribe(pcm: Float32Array): Promise<string> {
     try {
       const whisper = await getWhisper()
-      const output = (await whisper(pcm, {
+      const options: Record<string, unknown> = {
         language: 'urdu',
         task: 'transcribe',
-        chunk_length_s: 20,
-      })) as Record<string, unknown> | string | undefined
-      if (!output) return ''
-      if (typeof output === 'string') return output
-      if (typeof output.text === 'string') return output.text
-      if (Array.isArray(output) && output[0]?.text) return String(output[0].text)
-      return ''
-    } catch {
+      }
+      // Whisper processes 30 s windows; only chunk longer clips.
+      if (pcm.length > WHISPER_CHUNK_SECONDS * SAMPLE_RATE) {
+        options.chunk_length_s = WHISPER_CHUNK_SECONDS
+      }
+      const output = await whisper(pcm, options)
+      return extractText(output)
+    } catch (err) {
+      emitProgress({
+        model: 'whisper',
+        status: 'error',
+        progress: 0,
+        message: errorMessage(err, 'Whisper transcription failed'),
+      })
       return ''
     }
   },
@@ -384,7 +513,13 @@ const api = {
         width: rawImg.width,
         height: rawImg.height,
       }
-    } catch {
+    } catch (err) {
+      emitProgress({
+        model: 'florence',
+        status: 'error',
+        progress: 0,
+        message: errorMessage(err, 'Florence-2 grounding failed'),
+      })
       return {
         boxes: [],
         width: 0,
@@ -396,19 +531,15 @@ const api = {
   async translate(text: string): Promise<string | null> {
     try {
       const translator = await getTranslator()
-      if (!translator) return null
-      const output = (await translator(text)) as
-        | Record<string, unknown>
-        | string
-        | undefined
-      if (!output) return null
-      if (typeof output === 'string') return output
-      if (typeof output.translation_text === 'string')
-        return output.translation_text
-      if (Array.isArray(output) && output[0]?.translation_text)
-        return String(output[0].translation_text)
-      return null
-    } catch {
+      const output = await translator(text)
+      return extractTranslation(output)
+    } catch (err) {
+      emitProgress({
+        model: 'translate',
+        status: 'error',
+        progress: 0,
+        message: errorMessage(err, 'Translation failed'),
+      })
       return null
     }
   },
@@ -416,14 +547,21 @@ const api = {
   async tts(text: string): Promise<{ audio: Float32Array; sampling_rate: number } | null> {
     try {
       const tts = await getTts()
-      if (!tts) return null
       const output = await tts(text)
-      if (!output || !output.audio) return null
+      if (!output || !output.audio) {
+        throw new Error('TTS produced no audio')
+      }
       return {
         audio: output.audio as Float32Array,
         sampling_rate: (output.sampling_rate as number) || 16000,
       }
-    } catch {
+    } catch (err) {
+      emitProgress({
+        model: 'tts',
+        status: 'error',
+        progress: 0,
+        message: errorMessage(err, 'Urdu TTS failed'),
+      })
       return null
     }
   },
@@ -448,7 +586,7 @@ const api = {
           break
       }
     } catch {
-      // Warm up failure should not throw
+      // Load failures are already emitted as status 'error'
     }
   },
 }

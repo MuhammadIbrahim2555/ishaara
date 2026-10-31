@@ -85,9 +85,12 @@
 | Layer | Choice |
 |---|---|
 | AI runtime | **@huggingface/transformers (transformers.js v3)** in **Web Workers** via **Comlink**; WebGPU when available, otherwise WASM |
-| Speech | **Whisper** (`onnx-community/whisper-base`, falling back to `whisper-tiny`), Urdu |
-| Vision | **Florence-2-base-ft** (`onnx-community/Florence-2-base-ft`), quantised |
-| Translation | **Opus-MT en→ur** (verify the ONNX build) → team dictionary fallback |
+| Speech | **Whisper** Urdu: `onnx-community/whisper-base` on WebGPU (~80 MB), `onnx-community/whisper-tiny` q8 on WASM (~40 MB) |
+| Vision | **Florence-2-base-ft** (`onnx-community/Florence-2-base-ft`), WebGPU fp16/q4 or WASM q8; ~250 MB, WebGPU devices only, background download |
+| Translation | **Opus-MT en→ur** `fintutto/opus-mt-en-ur` (Apache-2.0, q8, WASM, ~142 MB); dictionary for instant UI words only |
+| Urdu TTS | **MMS-TTS** `obaidasiaone/mms-tts-urd-onnx` (CC-BY-NC-4.0, fp32, WASM, ~114 MB) for any Urdu text, plus 27 pre-generated clips for instant playback |
+
+All models load from the Hugging Face Hub and are cached after first use. Nothing is self-hosted.
 | OCR | **tesseract.js** (`eng` + `urd`) |
 | Validation | **Zod** for screen maps and lesson data |
 | Storage | **IndexedDB** via `idb-keyval` |
@@ -232,6 +235,6 @@ Title and team · user and problem · features · setup and run · stack · **AI
 | An Antigravity round fails or times out | Opus reviews what exists; Haiku finishes from the fix list |
 | Whisper mishears | Show "Aap ne kaha: …" (you said: …) to confirm; the task cards are always on screen |
 | Florence-2 points wrong | Used only on unmapped screens + a confidence threshold → Family se poochein |
-| No Opus-MT ONNX build | Dictionary of about 200 words |
+| Opus-MT Hub load fails | Dictionary of about 200 words, for instant UI words only |
 | Firebase sign-in or linking breaks | Turn off #22–23; Meri Taraqqi + the family progress card (WhatsApp) still show progress; say "family sync = planned" in the README |
 | Running late | Cut in this order: Map Studio → MP4 → judge dashboard → **family sync (keep the progress card)** → the 3D shelf (keep the list) → Opus-MT (keep the dictionary). **Never cut:** core loop, check step, fading, 3D lesson player, README, video |

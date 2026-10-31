@@ -129,7 +129,9 @@ export function createEngine(deps: EngineDependencies): Engine {
                 mapStep.anchor.icon,
                 mapStep.anchor.fallback
               )
-              if (visionTarget && visionTarget.confidence >= 0.55) {
+              // Only trust vision when its box is near the map's expected spot (confidence 0.8);
+              // a far-away match (0.55) may be a different icon, e.g. video-call instead of camera.
+              if (visionTarget && visionTarget.confidence >= 0.8) {
                 step.target = visionTarget
               }
             } catch {

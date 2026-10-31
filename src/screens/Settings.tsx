@@ -1,8 +1,7 @@
-import { useEffect, useReducer, useState } from 'react'
+import { useEffect, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import * as Switch from '@radix-ui/react-switch'
 import { useNavigate } from 'react-router-dom'
-import type { LoadProgress, ModelId } from '@/types/contracts'
 import { BackBar } from '@/ui/components/BackBar'
 import { BigButton } from '@/ui/components/BigButton'
 import { BiLabel } from '@/ui/components/BiLabel'
@@ -136,64 +135,6 @@ function ToggleRow({
         <Switch.Thumb className="block size-6 translate-x-[3px] rounded-full bg-white shadow-raised transition-transform duration-[180ms] data-[state=checked]:translate-x-[33px]" />
       </Switch.Root>
     </li>
-  )
-}
-
-const MODEL_ORDER: ModelId[] = ['ocr', 'whisper', 'florence', 'translate', 'tts']
-
-const STATE_TEXT: Record<LoadProgress['status'], Pair> = {
-  idle: { ur: 'ضرورت پر لوڈ ہوگا', en: 'Loads when needed' },
-  downloading: { ur: 'ڈاؤن لوڈ ہو رہا ہے', en: 'Downloading' },
-  ready: { ur: 'تیار', en: 'Ready' },
-  error: { ur: 'دستیاب نہیں', en: 'Not available' },
-}
-
-function downloadingText(percent: number): Pair {
-  return {
-    ur: `${STATE_TEXT.downloading.ur} ${percent}%`,
-    en: `${STATE_TEXT.downloading.en} ${percent}%`,
-  }
-}
-
-function deviceLine(device: string): Pair {
-  return { ur: `آلہ: ${device}`, en: `device: ${device}` }
-}
-
-/** Small status chip per on-device model, plus the compute device. Updates as models load. */
-function ModelStatus() {
-  const lang = useLang()
-  const [, refresh] = useReducer((n: number) => n + 1, 0)
-  useEffect(() => services.models.onProgress(() => refresh()), [])
-
-  const status = services.models.status()
-  const device = services.models.device()
-
-  return (
-    <section
-      aria-label={S.modelsTitle[lang]}
-      className="flex flex-col gap-3 rounded-panel bg-surface p-5 shadow-raised"
-    >
-      <Localized as="p" p={S.modelsTitle} className="text-ur-body font-bold leading-[2]" />
-      <ul className="flex flex-wrap gap-2">
-        {MODEL_ORDER.map((id) => {
-          const entry = status[id]
-          const state: Pair =
-            entry.status === 'downloading'
-              ? downloadingText(Math.round(entry.progress * 100))
-              : STATE_TEXT[entry.status]
-          return (
-            <li key={id} className="rounded-pill bg-teal-100 px-3 py-1">
-              <Localized
-                as="span"
-                p={{ ur: `${id}: ${state.ur}`, en: `${id}: ${state.en}` }}
-                className="text-label text-ink"
-              />
-            </li>
-          )
-        })}
-      </ul>
-      <Localized as="p" p={deviceLine(device)} className="text-label text-ink-soft" />
-    </section>
   )
 }
 
@@ -403,8 +344,6 @@ export function Settings() {
       <PersistenceStatus />
 
       <FamilySection />
-
-      <ModelStatus />
 
       <BigButton
         variant="secondary"

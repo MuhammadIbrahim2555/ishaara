@@ -60,7 +60,7 @@ We did not find a product that saves the helper's explanation as a replayable le
 | Screen-map matching | Tesseract.js OCR reads the screen; Zod-validated screen maps give the target. |
 | Florence-2 grounding | Finds buttons on screens with no map. Used only when the model is ready and confidence passes a threshold. |
 | Lesson player | 3D phone, GSAP timeline, spotlight, Urdu captions, Urdu voice clips. |
-| Urdu translation | Opus-MT en→ur when its ONNX build is available, with a dictionary fallback. |
+| Urdu translation | Opus-MT en→ur from the Hugging Face Hub (`fintutto/opus-mt-en-ur`). A small dictionary covers instant UI words only. |
 | "Ab aap khud karein" | The next-screenshot check, with a 3D *Shabash* celebration or a hint. |
 | Help that shrinks | Full → glow → "Aap ko aata hai!", plus a hint button. |
 | OTP/PIN guard | If the screen asks for an OTP, PIN or MPIN, the app shows a calm warning and stops the lesson. |
@@ -90,7 +90,7 @@ We did not find a product that saves the helper's explanation as a replayable le
 
 **Demo data:** the files in `public/samples/` are mock WhatsApp screens drawn for the demo. They are not real screenshots.
 
-**Voice:** Urdu voice clips are generated at build time with Meta MMS-TTS (`npm run voice:pregen`) and stored in `public/voice/`. If a clip is missing, live TTS runs in the worker; if that fails, the browser's `ur-PK` voice is used; if no voice is available, only captions show. No human recordings are used.
+**Voice:** any Urdu text is spoken by Meta MMS-TTS (`obaidasiaone/mms-tts-urd-onnx`), loaded from the Hub in the worker. 27 Urdu clips are pre-generated with `npm run voice:pregen` and stored in `public/voice/`, so common instructions play instantly. No human recordings are used.
 
 **Whisper Urdu accuracy varies** with accent, noise and the base vs tiny model. The app confirms what it heard.
 
@@ -155,13 +155,18 @@ We did not find a product that saves the helper's explanation as a replayable le
 
 | Use | Model or data | Where it runs | Licence |
 |---|---|---|---|
-| Speech to text | Whisper `onnx-community/whisper-base` (fallback `whisper-tiny`) | Browser, worker | MIT |
+| Speech to text | Whisper `onnx-community/whisper-base` on WebGPU (encoder fp32, decoder q4); `onnx-community/whisper-tiny` q8 on WASM | Browser, worker | MIT |
 | Vision (unmapped screens) | Florence-2-base-ft (`onnx-community/Florence-2-base-ft`) | Browser, worker | MIT |
-| Translation en→ur | Opus-MT `Xenova/opus-mt-en-ur` (if available), then dictionary | Browser, worker; dictionary bundled | CC-BY 4.0 |
-| Urdu voice | Meta MMS-TTS `mms-tts-urd-script_arabic` | Build time (clips); browser (live fallback) | CC-BY-NC 4.0 |
+| Translation en→ur | Opus-MT `fintutto/opus-mt-en-ur` (q8, WASM); dictionary for instant UI words only | Browser, worker | Apache-2.0 |
+| Urdu voice | Meta MMS-TTS `obaidasiaone/mms-tts-urd-onnx` (fp32, WASM), from `facebook/mms-tts-urd-script_arabic`; 27 pre-generated clips | Browser, worker; clips in `public/voice/` | CC-BY-NC 4.0 |
 | OCR | Tesseract.js with `eng` and `urd` data | Browser | Apache-2.0 |
 
-Model files are downloaded from public model hosts on first use and cached. Only the model files are downloaded; screenshots are not uploaded.
+Every model loads from the Hugging Face Hub; no model files are self-hosted. Only the model files are downloaded; screenshots are not uploaded. First-use downloads, all cached after that:
+
+- Whisper base ~80 MB (WebGPU) or tiny ~40 MB (WASM)
+- Florence-2 ~250 MB, only on WebGPU devices, downloaded in the background
+- Opus-MT en→ur ~142 MB
+- MMS-TTS Urdu ~114 MB
 
 ---
 
@@ -219,10 +224,10 @@ Every module should be explainable by a team member. Ownership:
 
 ## Credits
 
-- Urdu voice clips: generated with Meta MMS-TTS (`facebook/mms-tts-urd-script_arabic`), CC-BY-NC 4.0.
+- Urdu voice: Meta MMS-TTS (`facebook/mms-tts-urd-script_arabic`), ONNX build `obaidasiaone/mms-tts-urd-onnx`, CC-BY-NC 4.0. The clips in `public/voice/` are pre-generated from it.
 - Fonts: Noto Nastaliq Urdu (SIL Open Font Licence), Atkinson Hyperlegible Next (SIL Open Font Licence).
 - Images: generated with Antigravity (Google Gemini image model).
-- Models: Whisper (MIT), Florence-2 (MIT), Opus-MT (CC-BY 4.0), Tesseract (Apache-2.0).
+- Models: Whisper (MIT), Florence-2 (MIT), Opus-MT `fintutto/opus-mt-en-ur` (Apache-2.0), MMS-TTS (CC-BY-NC 4.0), Tesseract (Apache-2.0).
 - Research: GuideMe (CHI 2026), HelpCall (CHI 2024), and the sources linked in RESEARCH.md.
 
 ---

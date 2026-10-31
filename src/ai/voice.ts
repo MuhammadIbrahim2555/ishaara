@@ -1,6 +1,12 @@
 import type { VoiceService, VoiceSource } from '@/types/contracts'
 import { pcmToWav } from '@/ai/audio'
-import { pickSource, voiceKey } from '@/core/voiceSelect'
+import {
+  manifestEntry,
+  pickBrowserVoice,
+  pickSource,
+  speechLangFor,
+  voiceKey,
+} from '@/core/voiceSelect'
 
 export interface VoiceWorker {
   tts?(text: string): Promise<{ audio: Float32Array; sampling_rate: number } | null>
@@ -11,9 +17,9 @@ export interface VoiceModels {
 }
 
 /**
- * Creates the Urdu voice synthesis and audio playback service.
- * Supports pre-generated audio clips, on-device Meta MMS-TTS via web worker,
- * and browser SpeechSynthesis fallback. Never throws.
+ * Creates the voice service. Order: pre-generated clip (instant) -> on-device
+ * Urdu MMS-TTS for Urdu text -> browser speechSynthesis for English text -> silent.
+ * Never throws.
  */
 export function createVoice(models?: VoiceModels): VoiceService {
   let cachedManifest: Record<string, unknown> | null = null
@@ -60,14 +66,9 @@ export function createVoice(models?: VoiceModels): VoiceService {
     return manifestPromise
   }
 
-  function checkBrowserUrdu(): boolean {
-    if (typeof window === 'undefined' || !window.speechSynthesis) {
-      return false
-    }
+  function hasBrowserSpeech(): boolean {
     try {
-      const voices = window.speechSynthesis.getVoices?.()
-      if (!Array.isArray(voices)) return false
-      return voices.some((v) => v.lang && v.lang.toLowerCase().startsWith('ur'))
+      return typeof window !== 'undefined' && Boolean(window.speechSynthesis)
     } catch {
       return false
     }
@@ -184,20 +185,68 @@ export function createVoice(models?: VoiceModels): VoiceService {
     })
   }
 
+  function speakInBrowser(text: string, rate?: number): Promise<void> {
+    return new Promise<void>((resolve) => {
+      try {
+        const synth = window.speechSynthesis
+        const utterance = new SpeechSynthesisUtterance(text)
+        utterance.rate = rate ?? 0.9
+
+        // English text -> an 'en' voice when installed, otherwise the 'en' language tag.
+        const lang = speechLangFor(text)
+        let voices: SpeechSynthesisVoice[] = []
+        try {
+          voices = synth.getVoices?.() ?? []
+        } catch {
+          voices = []
+        }
+        const voice = pickBrowserVoice(voices, lang)
+        if (voice) {
+          utterance.voice = voice
+          utterance.lang = voice.lang
+        } else {
+          utterance.lang = lang
+        }
+
+        let settled = false
+        const cleanup = () => {
+          if (settled) return
+          settled = true
+          if (currentEndResolver === onResolve) {
+            currentEndResolver = null
+          }
+          utterance.onend = null
+          utterance.onerror = null
+        }
+
+        const onResolve = () => {
+          cleanup()
+          resolve()
+        }
+        currentEndResolver = onResolve
+
+        utterance.onend = () => onResolve()
+        utterance.onerror = () => onResolve()
+
+        synth.speak(utterance)
+      } catch {
+        resolve()
+      }
+    })
+  }
+
   return {
     async speak(text: string, opts?: { id?: string; rate?: number }): Promise<void> {
       try {
         stop()
 
         const manifest = await getManifest()
-        const mmsAvailable = Boolean(models?.worker?.tts)
-        const browserUrdu = checkBrowserUrdu()
-
         const source = pickSource({
           id: opts?.id,
           manifest,
-          mmsAvailable,
-          browserUrdu,
+          text,
+          mmsAvailable: typeof models?.worker?.tts === 'function',
+          browserSpeech: hasBrowserSpeech(),
         })
 
         if (source === 'none') {
@@ -206,9 +255,9 @@ export function createVoice(models?: VoiceModels): VoiceService {
 
         if (source === 'pregen' && opts?.id) {
           const entry =
-            manifest[opts.id] !== undefined
-              ? manifest[opts.id]
-              : manifest[voiceKey(opts.id)]
+            manifestEntry(manifest, opts.id) !== undefined
+              ? manifestEntry(manifest, opts.id)
+              : manifestEntry(manifest, voiceKey(opts.id))
 
           let filename: string
           if (typeof entry === 'object' && entry !== null && 'file' in entry) {
@@ -233,6 +282,7 @@ export function createVoice(models?: VoiceModels): VoiceService {
           if (!models?.worker?.tts) {
             return
           }
+          // A load or inference failure is emitted as status 'error' by the worker; no audio then.
           const result = await models.worker.tts(text)
           if (!result || !result.audio) {
             return
@@ -245,52 +295,10 @@ export function createVoice(models?: VoiceModels): VoiceService {
         }
 
         if (source === 'browser') {
-          if (typeof window === 'undefined' || !window.speechSynthesis) {
+          if (!hasBrowserSpeech()) {
             return
           }
-
-          await new Promise<void>((resolve) => {
-            try {
-              const utterance = new SpeechSynthesisUtterance(text)
-              utterance.rate = opts?.rate ?? 0.9
-
-              const voices = window.speechSynthesis.getVoices?.() || []
-              const urduVoice = voices.find(
-                (v) => v.lang && v.lang.toLowerCase().startsWith('ur')
-              )
-              if (urduVoice) {
-                utterance.voice = urduVoice
-                utterance.lang = urduVoice.lang
-              } else {
-                utterance.lang = 'ur'
-              }
-
-              let settled = false
-              const cleanup = () => {
-                if (settled) return
-                settled = true
-                if (currentEndResolver === onResolve) {
-                  currentEndResolver = null
-                }
-                utterance.onend = null
-                utterance.onerror = null
-              }
-
-              const onResolve = () => {
-                cleanup()
-                resolve()
-              }
-              currentEndResolver = onResolve
-
-              utterance.onend = () => onResolve()
-              utterance.onerror = () => onResolve()
-
-              window.speechSynthesis.speak(utterance)
-            } catch {
-              resolve()
-            }
-          })
-          return
+          await speakInBrowser(text, opts?.rate)
         }
       } catch {
         // Never throws: always resolves cleanly
@@ -304,9 +312,12 @@ export function createVoice(models?: VoiceModels): VoiceService {
     async source(id?: string): Promise<VoiceSource> {
       try {
         const manifest = await getManifest()
-        const mmsAvailable = Boolean(models?.worker?.tts)
-        const browserUrdu = checkBrowserUrdu()
-        return pickSource({ id, manifest, mmsAvailable, browserUrdu })
+        return pickSource({
+          id,
+          manifest,
+          mmsAvailable: typeof models?.worker?.tts === 'function',
+          browserSpeech: hasBrowserSpeech(),
+        })
       } catch {
         return 'none'
       }

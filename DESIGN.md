@@ -45,7 +45,7 @@ High-contrast setting: `--ink-soft` → `--ink`, `--surface-sunk` → `#EDE3D3`,
 - **BigButton:** min-height 64px, radius 20px, label 22px Urdu + 15px Latin sub-label, icon leading (right side in RTL). Primary teal, secondary white with 2px teal-900 border. Pressed: scale .98 + shadow-1.
 - **TaskTile:** 2×2 grid on phone (min 160px square), clay image 96px, Urdu label + Latin sub-label, CSS 3D tilt (max 6°) toward pointer, `--shadow-2` lift on hover/focus. Whole tile is one `<button>`.
 - **MicOrb:** 112px teal circle, hold-to-talk _and_ tap-to-toggle; listening state = soft saffron pulse rings (scale + opacity), live "سن رہی ہوں…" text.
-- **SpeakButton (🔊):** 48px round, next to every instruction; plays Urdu voice in this order: pre-generated `public/voice/<id>.wav` (MMS-TTS at build time) → live MMS-TTS Urdu in the worker → browser `speechSynthesis` ur-PK → captions only (button hidden). No human recordings.
+- **SpeakButton (🔊):** 48px round, next to every instruction; plays Urdu voice in this order: pre-generated `public/voice/<id>.wav` (27 clips from MMS-TTS, `obaidasiaone/mms-tts-urd-onnx` on the Hub) → live MMS-TTS Urdu in the worker for any other Urdu text → captions only if the model fails (button hidden). No human recordings.
 - **BackBar:** top bar, "واپس" big back button always present except on Home.
 - **BottomNav (phone):** 4 items — گھر Home, میری ویڈیوز Videos, میری ترقی Progress, ترتیبات Settings — 72px tall, icon + label, active = teal-100 pill behind icon.
 - **Toast/Hint:** inline panel (not modal) with coral or teal tint, Urdu text + speak button.
