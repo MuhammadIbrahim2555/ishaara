@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'http'
-import { handleVoice } from '../server/geminiVoice'
+// ESM on Vercel's Node runtime needs the explicit .js extension (resolves to geminiVoice.ts at build).
+import { handleVoice } from '../server/geminiVoice.js'
 
 const MAX_BODY_BYTES = 1.5 * 1024 * 1024 // 1.5 MB
 

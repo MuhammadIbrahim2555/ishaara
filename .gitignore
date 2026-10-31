@@ -36,3 +36,13 @@ dist-ssr
 *.sln
 *.sw?
 
+
+# demo video pipeline
+video/raw/
+video/work/
+video/out/
+video/voice/
+video/remotion/node_modules/
+
+.vercel
+.env*
