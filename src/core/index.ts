@@ -16,6 +16,7 @@ import type {
 import { createOcrClient } from '@/ai/ocr'
 import { createModelManager } from '@/ai/models'
 import { createSpeech } from '@/ai/speech'
+import { createGeminiSpeech, isSmartVoiceEnabled } from '@/ai/geminiSpeech'
 import { createVision } from '@/ai/vision'
 import { gateVision } from '@/ai/visionGate'
 import { createVoice } from '@/ai/voice'
@@ -37,6 +38,7 @@ export { createLibrary } from './library'
 export { createShare } from './share'
 export { createCapture } from './capture'
 export { createSpeech } from '@/ai/speech'
+export { createGeminiSpeech, isSmartVoiceEnabled, SMART_VOICE_STORAGE_KEY } from '@/ai/geminiSpeech'
 export { createVision } from '@/ai/vision'
 export { createVoice } from '@/ai/voice'
 export { createTranslate } from '@/ai/translate'
@@ -143,6 +145,8 @@ export function getServices({ mock }: { mock: boolean }): AppServices {
     const rawSpeech = createMockSpeech()
     const speech: SpeechService = {
       transcribe: (audio) => metrics.time('whisper', () => rawSpeech.transcribe(audio)),
+      mode: () => rawSpeech.mode(),
+      setOnline: (enabled) => rawSpeech.setOnline(enabled),
     }
 
     const models = createMockModelManager()
@@ -204,9 +208,15 @@ export function getServices({ mock }: { mock: boolean }): AppServices {
   }
 
   const rawSpeech = createSpeech(models)
-  const speech: SpeechService = {
+  const whisperSpeech: SpeechService = {
     transcribe: (audio) => metrics.time('whisper', () => rawSpeech.transcribe(audio)),
+    mode: () => rawSpeech.mode(),
+    setOnline: (enabled) => rawSpeech.setOnline(enabled),
   }
+  const speech = createGeminiSpeech({
+    fallback: whisperSpeech,
+    isEnabled: isSmartVoiceEnabled,
+  })
 
   const rawVoice = createVoice(models)
   const voice: VoiceService = {

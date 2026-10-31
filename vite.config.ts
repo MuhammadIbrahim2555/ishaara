@@ -3,11 +3,13 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
+import { voiceApiPlugin } from './server/viteVoicePlugin'
 
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    voiceApiPlugin(),
     VitePWA({
       strategies: 'injectManifest',
       srcDir: 'src',
@@ -61,5 +63,6 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./tests/setup.ts'],
     include: ['tests/**/*.test.ts'],
+    pool: 'threads',
   },
 })

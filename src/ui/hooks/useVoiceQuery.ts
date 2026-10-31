@@ -2,14 +2,30 @@ import { useEffect, useRef, useState } from 'react'
 import type { LoadProgress, TaskId } from '@/types/contracts'
 import { services } from '@/ui/services'
 
+/** A spoken reply from the engine (Gemini, or on-device Whisper flow). Both languages, may fall back. */
+export interface VoiceAnswer {
+  ur: string
+  en: string
+  source: 'gemini' | 'whisper' | null
+}
+
 export type VoiceQuery =
   | { kind: 'idle' }
   | { kind: 'listening' }
   | { kind: 'busy' }
-  | { kind: 'matched'; text: string; task: TaskId }
-  | { kind: 'unmatched'; text: string }
+  | { kind: 'matched'; text: string; task: TaskId; answer?: VoiceAnswer }
+  | { kind: 'unmatched'; text: string; answer?: VoiceAnswer }
   | { kind: 'denied' }
   | { kind: 'error' }
+
+/** Reads the optional reply fields defensively: the engine may or may not send them. */
+function toAnswer(result: { replyUr?: unknown; replyEn?: unknown; source?: unknown }): VoiceAnswer | undefined {
+  const ur = typeof result.replyUr === 'string' ? result.replyUr.trim() : ''
+  const en = typeof result.replyEn === 'string' ? result.replyEn.trim() : ''
+  if (!ur && !en) return undefined
+  const source = result.source === 'gemini' || result.source === 'whisper' ? result.source : null
+  return { ur: ur || en, en: en || ur, source }
+}
 
 /** A recording stops by itself after this long. */
 export const MAX_RECORD_MS = 6000
@@ -78,9 +94,11 @@ export function useVoiceQuery() {
     let next: VoiceQuery
     try {
       const result = await services.speech.transcribe(blob)
+      const extra = result as typeof result & { replyUr?: string; replyEn?: string; source?: string }
+      const answer = toAnswer(extra)
       next = result.task
-        ? { kind: 'matched', text: result.text, task: result.task }
-        : { kind: 'unmatched', text: result.text }
+        ? { kind: 'matched', text: result.text, task: result.task, answer }
+        : { kind: 'unmatched', text: result.text, answer }
     } catch {
       next = { kind: 'unmatched', text: '' }
     }

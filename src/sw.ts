@@ -19,7 +19,7 @@ precacheAndRoute(self.__WB_MANIFEST)
 try {
   const handler = createHandlerBoundToURL('/index.html')
   const navigationRoute = new NavigationRoute(handler, {
-    denylist: [/^\/share-target/],
+    denylist: [/^\/share-target/, /^\/api\//],
   })
   registerRoute(navigationRoute)
 } catch {

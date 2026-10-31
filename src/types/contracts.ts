@@ -223,9 +223,20 @@ export interface Engine {
   onProgress(cb: (e: LoadProgress) => void): () => void
 }
 
+export interface SpeechResult {
+  text: string
+  task: TaskId | null
+  confidence: number
+  replyUr?: string
+  replyEn?: string
+  source: 'gemini' | 'whisper'
+}
+
 /** Speech-to-text service interface for voice queries. */
 export interface SpeechService {
-  transcribe(audio: Blob): Promise<{ text: string; task: TaskId | null; confidence: number }>
+  transcribe(audio: Blob): Promise<SpeechResult>
+  mode(): 'gemini' | 'whisper'
+  setOnline(enabled: boolean): void
 }
 
 /** Offline IndexedDB storage service for lessons and telemetry. */

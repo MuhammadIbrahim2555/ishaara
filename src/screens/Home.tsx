@@ -1,22 +1,42 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BigButton } from '@/ui/components/BigButton'
 import { Hint } from '@/ui/components/Hint'
 import { LangToggle } from '@/ui/components/LangToggle'
 import { MicOrb } from '@/ui/components/MicOrb'
 import { Screen } from '@/ui/components/Screen'
+import { SmartVoiceConsent } from '@/ui/components/SmartVoiceConsent'
 import { TaskTile } from '@/ui/components/TaskTile'
 import { Localized } from '@/ui/components/UrduText'
+import { VoiceReplyPanel } from '@/ui/components/VoiceReplyPanel'
 import { useModelWarmUp } from '@/ui/hooks/useModelWarmUp'
 import { useVoiceQuery, type VoiceQuery } from '@/ui/hooks/useVoiceQuery'
 import { IconImage } from '@/ui/icons'
 import { S } from '@/ui/strings'
 import { TASK_IMAGE, TASK_ORDER } from '@/ui/tasks'
+import { getSmartVoice, setSmartVoice, type SmartVoiceChoice } from '@/ui/smartVoice'
 import type { TaskId } from '@/types/contracts'
 
 export function Home() {
   const navigate = useNavigate()
   const { query, whisperProgress, start, toggle } = useVoiceQuery()
+  const [consentOpen, setConsentOpen] = useState(false)
   useModelWarmUp()
+
+  // The first mic tap asks once about smart voice; recording starts after the learner chooses.
+  function onMicToggle() {
+    if (query.kind !== 'listening' && getSmartVoice() === null) {
+      setConsentOpen(true)
+      return
+    }
+    toggle()
+  }
+
+  function onConsentChoose(choice: SmartVoiceChoice) {
+    setSmartVoice(choice)
+    setConsentOpen(false)
+    void start()
+  }
 
   return (
     <Screen nav>
@@ -28,7 +48,17 @@ export function Home() {
         <Localized as="p" p={S.homeQuestion} className="text-ur-body" />
       </header>
 
-      <MicOrb listening={query.kind === 'listening'} busy={query.kind === 'busy'} onToggle={toggle} />
+      <MicOrb
+        listening={query.kind === 'listening'}
+        busy={query.kind === 'busy'}
+        onToggle={onMicToggle}
+      />
+
+      <SmartVoiceConsent
+        open={consentOpen}
+        onOpenChange={setConsentOpen}
+        onChoose={onConsentChoose}
+      />
 
       {whisperProgress !== null && <SpeechModelProgress progress={whisperProgress} />}
 
@@ -67,13 +97,17 @@ interface VoiceResultProps {
 
 /** What the mic heard. The learner always confirms the task; nothing navigates by itself. */
 function VoiceResult({ query, onConfirm, onAgain }: VoiceResultProps) {
-  if (query.kind === 'denied') return <Hint tone="coral" text={S.micDenied} />
-  if (query.kind === 'error' || query.kind === 'unmatched') return <Hint text={S.notHeard} />
-  if (query.kind === 'matched') {
+  if (query.kind === 'denied') return <Hint tone="coral" pair={S.micDenied} />
+  if (query.kind === 'error') return <Hint pair={S.notHeard} />
+  if (query.kind === 'unmatched' && !query.answer) return <Hint pair={S.notHeard} />
+  if (query.kind === 'matched' || query.kind === 'unmatched') {
     return (
       <section className="flex flex-col gap-4 rounded-panel bg-surface p-5 shadow-raised">
-        <Localized as="p" p={S.youSaid(query.text)} className="text-ur-body" />
-        <BigButton label={S.yesDoTask(S.tasks[query.task])} onClick={() => onConfirm(query.task)} />
+        {query.answer && <VoiceReplyPanel answer={query.answer} />}
+        {query.text && <Localized as="p" p={S.youSaid(query.text)} className="text-ur-body" />}
+        {query.kind === 'matched' && (
+          <BigButton label={S.yesDoTask(S.tasks[query.task])} onClick={() => onConfirm(query.task)} />
+        )}
         <BigButton variant="secondary" label={S.sayAgain} onClick={onAgain} />
       </section>
     )

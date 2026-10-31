@@ -6,24 +6,33 @@ import type {
   LoadProgress,
   ModelId,
   RedactRect,
+  SpeechResult,
   SpeechService,
   TaskId,
 } from '@/types/contracts'
 import { newId } from './id'
 
 /**
- * Creates a mock speech service returning predefined Urdu audio transcription.
+ * Creates a mock speech service returning predefined Urdu audio transcription and replies.
  */
 export function createMockSpeech(): SpeechService {
+  let online = true
   return {
     async transcribe(
       _audio: Blob,
-    ): Promise<{ text: string; task: TaskId | null; confidence: number }> {
+    ): Promise<SpeechResult> {
       return {
         text: 'تصویر کیسے بھیجوں',
         task: 'photo',
         confidence: 0.9,
+        replyUr: 'ٹھیک ہے، میں آپ کو تصویر بھیجنا سکھاتی ہوں',
+        replyEn: "Okay, I'll teach you how to send a photo",
+        source: 'gemini',
       }
+    },
+    mode: () => (online ? 'gemini' : 'whisper'),
+    setOnline: (enabled: boolean) => {
+      online = enabled
     },
   }
 }

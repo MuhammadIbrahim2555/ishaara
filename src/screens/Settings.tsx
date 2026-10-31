@@ -14,6 +14,7 @@ import { bodyClass, langAttrs, useLang } from '@/ui/i18n'
 import { IconHelp, IconTrash } from '@/ui/icons'
 import { isPersisted } from '@/ui/persist'
 import { services } from '@/ui/services'
+import { getSmartVoice, SMART_VOICE_COPY, setSmartVoice } from '@/ui/smartVoice'
 import { S, type Pair } from '@/ui/strings'
 import { useUiStore, type TextSize } from '@/ui/store'
 
@@ -293,6 +294,12 @@ export function Settings() {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [deleted, setDeleted] = useState(false)
+  const [smartVoiceOn, setSmartVoiceOn] = useState(() => getSmartVoice() === 'on')
+
+  function changeSmartVoice(on: boolean) {
+    setSmartVoiceOn(on)
+    setSmartVoice(on ? 'on' : 'off')
+  }
 
   async function deleteEverything() {
     setBusy(true)
@@ -334,6 +341,13 @@ export function Settings() {
           hint={S.simpleHint}
           checked={settings.simpleMode}
           onChange={(simpleMode) => setSettings({ simpleMode })}
+        />
+        <ToggleRow
+          id="setting-smart-voice"
+          title={SMART_VOICE_COPY.settingTitle}
+          hint={smartVoiceOn ? SMART_VOICE_COPY.settingOn : SMART_VOICE_COPY.settingOff}
+          checked={smartVoiceOn}
+          onChange={changeSmartVoice}
         />
         <li className="flex flex-col gap-3 py-5">
           <BiLabel label={S.language} className={ROW_LABEL_CLASS} />
