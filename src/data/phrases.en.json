@@ -1,0 +1,17 @@
+{
+  "welcome": "Welcome! Let's learn together",
+  "ask_screen": "What should I do on this screen?",
+  "making_video": "Making video, please wait a moment",
+  "first_time_setup": "Let's set up for the first time",
+  "now_you_do": "Now you try doing it",
+  "shabash": "Well done! Very good",
+  "shabash_done": "Well done! Task completed",
+  "hint_try_this": "Hint: Tap here to see",
+  "unknown_screen": "This screen was not recognized",
+  "ask_family": "Ask a family member for help",
+  "safety_otp": "Warning: Never share passwords or codes with anyone",
+  "you_know_this": "You already know this",
+  "need_hint": "Do you need help?",
+  "progress_intro": "Let's see what you have learned",
+  "listening": "Listening, please speak..."
+}

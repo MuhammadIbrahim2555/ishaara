@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844">
+  <rect width="390" height="844" fill="#FFFFFF"/>
+  <!-- Header bar -->
+  <rect width="390" height="80" fill="#075E54"/>
+  <text x="24" y="52" fill="#FFFFFF" font-family="Helvetica, Arial, sans-serif" font-size="22" font-weight="bold">Recents</text>
+  <text x="140" y="52" fill="#B2DFDB" font-family="Helvetica, Arial, sans-serif" font-size="18">All Photos</text>
+  <text x="260" y="52" fill="#B2DFDB" font-family="Helvetica, Arial, sans-serif" font-size="18">Albums</text>
+  <!-- Photo grid -->
+  <!-- Target photo at ~(0.18, 0.3) -> cx = 70, cy = 253 -->
+  <rect x="15" y="110" width="115" height="115" rx="8" fill="#F43F5E"/>
+  <text x="72" y="172" fill="#FFFFFF" font-family="Helvetica, Arial, sans-serif" font-size="18" text-anchor="middle" font-weight="bold">Rose</text>
+  <!-- Other photos -->
+  <rect x="138" y="110" width="115" height="115" rx="8" fill="#3B82F6"/>
+  <rect x="261" y="110" width="115" height="115" rx="8" fill="#10B981"/>
+  <rect x="15" y="235" width="115" height="115" rx="8" fill="#F59E0B"/>
+  <rect x="138" y="235" width="115" height="115" rx="8" fill="#8B5CF6"/>
+  <rect x="261" y="235" width="115" height="115" rx="8" fill="#EC4899"/>
+  <rect x="15" y="360" width="115" height="115" rx="8" fill="#06B6D4"/>
+  <rect x="138" y="360" width="115" height="115" rx="8" fill="#84CC16"/>
+  <rect x="261" y="360" width="115" height="115" rx="8" fill="#64748B"/>
+</svg>

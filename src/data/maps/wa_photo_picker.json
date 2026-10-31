@@ -1,0 +1,25 @@
+{
+  "id": "wa_photo_picker",
+  "app": "whatsapp",
+  "titleUr": "تصویر کا انتخاب",
+  "match": {
+    "any": ["recents", "all photos", "photos", "albums", "cancel","حالیہ", "تصاویر"],
+    "minHits": 1
+  },
+  "tasks": {
+    "photo": [
+      {
+        "anchor": {
+          "fallback": [0.18, 0.3]
+        },
+        "voice": "wa_photo_3.mp3",
+        "captionUr": "جو تصویر بھیجنی ہے اس پر دبائیں",
+        "whyUr": "اس سے وہ تصویر چن لی جائے گی",
+        "captionEn": "Tap the photo you want to send",
+        "whyEn": "This selects that photo",
+        "labelEn": "Select photo",
+        "expectNext": "wa_photo_preview"
+      }
+    ]
+  }
+}

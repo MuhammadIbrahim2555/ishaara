@@ -1,0 +1,110 @@
+{
+  "welcome": {
+    "file": "welcome.wav",
+    "text": "خوش آمدید! آئیں مل کر سیکھتے ہیں"
+  },
+  "ask_screen": {
+    "file": "ask_screen.wav",
+    "text": "اس سکرین پر کیا کرنا ہے؟"
+  },
+  "making_video": {
+    "file": "making_video.wav",
+    "text": "ویڈیو بنا رہے ہیں، ایک لمحہ رکیں"
+  },
+  "first_time_setup": {
+    "file": "first_time_setup.wav",
+    "text": "آئیے پہلی بار سیٹ اپ کرتے ہیں"
+  },
+  "now_you_do": {
+    "file": "now_you_do.wav",
+    "text": "اب آپ کر کے دکھائیں"
+  },
+  "shabash": {
+    "file": "shabash.wav",
+    "text": "شاباش! بہت خوب"
+  },
+  "shabash_done": {
+    "file": "shabash_done.wav",
+    "text": "شاباش! کام مکمل ہو گیا"
+  },
+  "hint_try_this": {
+    "file": "hint_try_this.wav",
+    "text": "اشارہ: یہاں دبا کر دیکھیں"
+  },
+  "unknown_screen": {
+    "file": "unknown_screen.wav",
+    "text": "یہ سکرین پہچانی نہیں گئی"
+  },
+  "ask_family": {
+    "file": "ask_family.wav",
+    "text": "خاندان کے کسی فرد سے مدد لیں"
+  },
+  "safety_otp": {
+    "file": "safety_otp.wav",
+    "text": "خبردار: پاس ورڈ یا کوڈ کسی کو مت بتائیں"
+  },
+  "you_know_this": {
+    "file": "you_know_this.wav",
+    "text": "آپ کو یہ پہلے سے معلوم ہے"
+  },
+  "need_hint": {
+    "file": "need_hint.wav",
+    "text": "کیا آپ کو مدد چاہیے؟"
+  },
+  "progress_intro": {
+    "file": "progress_intro.wav",
+    "text": "آئیے دیکھتے ہیں آپ نے کیا سیکھا"
+  },
+  "listening": {
+    "file": "listening.wav",
+    "text": "سن رہے ہیں، فرمائیے..."
+  },
+  "wa_photo_2": {
+    "file": "wa_photo_2.wav",
+    "text": "یہ کیمرے کا نشان دبائیں"
+  },
+  "wa_photo_2_why": {
+    "file": "wa_photo_2_why.wav",
+    "text": "اس سے آپ کی تصویریں کھلیں گی"
+  },
+  "wa_video_2": {
+    "file": "wa_video_2.wav",
+    "text": "اوپر ویڈیو کیمرے کا نشان دبائیں"
+  },
+  "wa_video_2_why": {
+    "file": "wa_video_2_why.wav",
+    "text": "اس سے ویڈیو کال شروع ہو جائے گی"
+  },
+  "wa_photo_1": {
+    "file": "wa_photo_1.wav",
+    "text": "جس کو تصویر بھیجنی ہے، اس کے نام پر دبائیں"
+  },
+  "wa_photo_1_why": {
+    "file": "wa_photo_1_why.wav",
+    "text": "اس سے ان کے ساتھ آپ کی بات چیت کھلے گی"
+  },
+  "wa_video_1": {
+    "file": "wa_video_1.wav",
+    "text": "جس کو ویڈیو کال کرنی ہے، اس کے نام پر دبائیں"
+  },
+  "wa_video_1_why": {
+    "file": "wa_video_1_why.wav",
+    "text": "اس سے ان کے ساتھ آپ کی بات چیت کھلے گی"
+  },
+  "wa_photo_3": {
+    "file": "wa_photo_3.wav",
+    "text": "جو تصویر بھیجنی ہے اس پر دبائیں"
+  },
+  "wa_photo_3_why": {
+    "file": "wa_photo_3_why.wav",
+    "text": "اس سے وہ تصویر چن لی جائے گی"
+  },
+  "wa_photo_4": {
+    "file": "wa_photo_4.wav",
+    "text": "اب یہ ہرا تیر دبائیں"
+  },
+  "wa_photo_4_why": {
+    "file": "wa_photo_4_why.wav",
+    "text": "اس سے تصویر چلی جائے گی"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "id": "wa_chat",
+  "app": "whatsapp",
+  "titleUr": "بات چیت",
+  "match": {
+    "any": ["type a message", "message", "online", "last seen","پیغام", "پیغام لکھیں"],
+    "minHits": 1
+  },
+  "tasks": {
+    "photo": [
+      {
+        "anchor": {
+          "icon": "camera icon",
+          "fallback": [0.86, 0.94]
+        },
+        "voice": "wa_photo_2.mp3",
+        "captionUr": "یہ کیمرے کا نشان دبائیں",
+        "whyUr": "اس سے آپ کی تصویریں کھلیں گی",
+        "captionEn": "Tap the camera icon",
+        "whyEn": "This opens your photos",
+        "labelEn": "Camera",
+        "expectNext": "wa_photo_picker"
+      }
+    ],
+    "video_call": [
+      {
+        "anchor": {
+          "icon": "video camera icon",
+          "fallback": [0.78, 0.07]
+        },
+        "voice": "wa_video_2.mp3",
+        "captionUr": "اوپر ویڈیو کیمرے کا نشان دبائیں",
+        "whyUr": "اس سے ویڈیو کال شروع ہو جائے گی",
+        "captionEn": "Tap the video camera icon at the top",
+        "whyEn": "This starts the video call",
+        "labelEn": "Video call"
+      }
+    ]
+  }
+}

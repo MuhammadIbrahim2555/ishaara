@@ -1,0 +1,26 @@
+{
+  "id": "wa_photo_preview",
+  "app": "whatsapp",
+  "titleUr": "تصویر دیکھیں اور بھیجیں",
+  "match": {
+    "any": ["add a caption", "caption", "کیپشن"],
+    "minHits": 1
+  },
+  "tasks": {
+    "photo": [
+      {
+        "anchor": {
+          "text": ["send"],
+          "icon": "send arrow",
+          "fallback": [0.9, 0.93]
+        },
+        "voice": "wa_photo_4.mp3",
+        "captionUr": "اب یہ ہرا تیر دبائیں",
+        "whyUr": "اس سے تصویر چلی جائے گی",
+        "captionEn": "Now tap the green arrow",
+        "whyEn": "This sends the photo",
+        "labelEn": "Send"
+      }
+    ]
+  }
+}

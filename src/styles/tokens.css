@@ -1,0 +1,58 @@
+/* Ishaara design tokens. Source of truth: DESIGN.md. */
+
+:root {
+  /* Colour */
+  --bg: #fbf7f0;
+  --surface: #ffffff;
+  --surface-sunk: #f3ece1;
+  --ink: #1f2a2b;
+  --ink-soft: #4a5556;
+  --teal-900: #0f5257;
+  --teal-700: #1c6e70;
+  --teal-100: #dcedea;
+  --saffron: #e8a33d;
+  --saffron-ink: #7a4a07;
+  --coral: #e07a5f;
+  --success: #2f7d4f;
+
+  /* Elevation */
+  --shadow-1: 0 2px 4px rgba(60, 40, 20, 0.06), 0 8px 24px rgba(60, 40, 20, 0.08);
+  --shadow-2: 0 6px 12px rgba(60, 40, 20, 0.08), 0 20px 48px rgba(60, 40, 20, 0.12);
+
+  /* Radius (r-pill is for small pills only) */
+  --r-panel: 16px;
+  --r-control: 20px;
+  --r-tile: 28px;
+  --r-pill: 999px;
+
+  /* Spacing, 4-pt scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Focus ring for every focusable element */
+  --focus: 0 0 0 4px #fbf7f0, 0 0 0 7px var(--saffron);
+
+  /* Text scale, set on <html> through data-text */
+  --scale: 1;
+}
+
+/* Text size setting */
+[data-text='large'] {
+  --scale: 1.2;
+}
+
+[data-text='xl'] {
+  --scale: 1.4;
+}
+
+/* High contrast setting. Control borders (2px ink) are applied in index.css. */
+[data-contrast='high'] {
+  --ink-soft: var(--ink);
+  --surface-sunk: #ede3d3;
+}

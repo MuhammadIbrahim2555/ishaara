@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844">
+  <rect width="390" height="844" fill="#F4F4F5"/>
+  <!-- App bar -->
+  <rect width="390" height="120" fill="#075E54"/>
+  <text x="24" y="55" fill="#FFFFFF" font-family="Helvetica, Arial, sans-serif" font-size="24" font-weight="bold">Chats</text>
+  <!-- Tabs -->
+  <text x="24" y="105" fill="#FFFFFF" font-family="Helvetica, Arial, sans-serif" font-size="18" font-weight="bold">Chats</text>
+  <text x="100" y="105" fill="#B2DFDB" font-family="Helvetica, Arial, sans-serif" font-size="18">Updates</text>
+  <text x="190" y="105" fill="#B2DFDB" font-family="Helvetica, Arial, sans-serif" font-size="18">Communities</text>
+  <text x="320" y="105" fill="#B2DFDB" font-family="Helvetica, Arial, sans-serif" font-size="18">Calls</text>
+  <rect x="20" y="115" width="50" height="4" fill="#FFFFFF"/>
+  <!-- Chat rows -->
+  <!-- Row 1: Beta -->
+  <rect x="0" y="130" width="390" height="76" fill="#FFFFFF"/>
+  <circle cx="48" cy="168" r="26" fill="#00897B"/>
+  <text x="48" y="174" fill="#FFFFFF" font-family="Helvetica, Arial, sans-serif" font-size="18" text-anchor="middle" font-weight="bold">B</text>
+  <text x="90" y="162" fill="#111827" font-family="Helvetica, Arial, sans-serif" font-size="18" font-weight="600">Beta</text>
+  <text x="90" y="184" fill="#54656F" font-family="Helvetica, Arial, sans-serif" font-size="18">Kahan ho?</text>
+  <!-- Row 2: Beti -->
+  <rect x="0" y="210" width="390" height="76" fill="#FFFFFF"/>
+  <circle cx="48" cy="248" r="26" fill="#3949AB"/>
+  <text x="48" y="254" fill="#FFFFFF" font-family="Helvetica, Arial, sans-serif" font-size="18" text-anchor="middle" font-weight="bold">B</text>
+  <text x="90" y="242" fill="#111827" font-family="Helvetica, Arial, sans-serif" font-size="18" font-weight="600">Beti</text>
+  <text x="90" y="264" fill="#54656F" font-family="Helvetica, Arial, sans-serif" font-size="18">Salam Ammi!</text>
+  <!-- Row 3: Family -->
+  <rect x="0" y="290" width="390" height="76" fill="#FFFFFF"/>
+  <circle cx="48" cy="328" r="26" fill="#D81B60"/>
+  <text x="48" y="334" fill="#FFFFFF" font-family="Helvetica, Arial, sans-serif" font-size="18" text-anchor="middle" font-weight="bold">F</text>
+  <text x="90" y="322" fill="#111827" font-family="Helvetica, Arial, sans-serif" font-size="18" font-weight="600">Family</text>
+  <text x="90" y="344" fill="#54656F" font-family="Helvetica, Arial, sans-serif" font-size="18">Chachu: Eid Mubarak</text>
+  <!-- Row 4: Doctor Sahab -->
+  <rect x="0" y="370" width="390" height="76" fill="#FFFFFF"/>
+  <circle cx="48" cy="408" r="26" fill="#039BE5"/>
+  <text x="48" y="414" fill="#FFFFFF" font-family="Helvetica, Arial, sans-serif" font-size="18" text-anchor="middle" font-weight="bold">D</text>
+  <text x="90" y="402" fill="#111827" font-family="Helvetica, Arial, sans-serif" font-size="18" font-weight="600">Doctor Sahab</text>
+  <text x="90" y="424" fill="#54656F" font-family="Helvetica, Arial, sans-serif" font-size="18">Dawa waqt par lein</text>
+</svg>

@@ -1,0 +1,120 @@
+@import 'tailwindcss';
+@import './tokens.css';
+
+/* Tailwind v4 theme: utilities resolve to the CSS variables in tokens.css,
+   so the text-size and high-contrast settings flow through automatically. */
+@theme {
+  --color-page: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-sunk: var(--surface-sunk);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-teal-900: var(--teal-900);
+  --color-teal-700: var(--teal-700);
+  --color-teal-100: var(--teal-100);
+  --color-saffron: var(--saffron);
+  --color-saffron-ink: var(--saffron-ink);
+  --color-coral: var(--coral);
+  --color-success: var(--success);
+
+  --font-urdu: 'Noto Nastaliq Urdu', 'Atkinson Hyperlegible Next', serif;
+  --font-latin: 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', system-ui, sans-serif;
+
+  --shadow-raised: var(--shadow-1);
+  --shadow-lifted: var(--shadow-2);
+
+  --radius-panel: var(--r-panel);
+  --radius-control: var(--r-control);
+  --radius-tile: var(--r-tile);
+  --radius-pill: var(--r-pill);
+
+  /* Type scale in rem, so the text-size setting scales it. */
+  --text-btn: 1.375rem;
+  --text-btn--line-height: 1.6;
+  --text-ur-display: 3rem;
+  --text-ur-display--line-height: 1.7;
+  --text-ur-title: 1.875rem;
+  --text-ur-title--line-height: 1.9;
+  --text-ur-body: 1.375rem;
+  --text-ur-body--line-height: 2.1;
+  --text-body: 1.125rem;
+  --text-body--line-height: 1.5;
+  --text-label: 1rem;
+  --text-label--line-height: 1.4;
+  --text-sub: 0.9375rem;
+  --text-sub--line-height: 1.3;
+  --text-latin-display: 3rem;
+  --text-latin-display--line-height: 1.1;
+  --text-latin-display--font-weight: 800;
+  --text-latin-display--letter-spacing: -0.02em;
+}
+
+@layer base {
+  html {
+    font-size: calc(16px * var(--scale));
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    color-scheme: light;
+    accent-color: var(--teal-900);
+    caret-color: var(--teal-900);
+    scrollbar-color: var(--teal-700) var(--surface-sunk);
+  }
+
+  body {
+    min-height: 100dvh;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 1.125rem;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Urdu blocks: Nastaliq, tall line-height. Set by lang or by dir on the element. */
+  :lang(ur),
+  [dir='rtl'] {
+    font-family: var(--font-urdu);
+    line-height: 2.1;
+  }
+
+  /* Latin blocks inside an Urdu shell must carry lang="en" dir="ltr". */
+  :lang(en),
+  [lang='en'],
+  [dir='ltr'] {
+    font-family: 'Atkinson Hyperlegible Next', system-ui, sans-serif;
+    line-height: 1.5;
+  }
+
+  ::selection {
+    background: var(--teal-100);
+    color: var(--ink);
+  }
+}
+
+/* Clay images have a baked cream background; multiply hides it on white/sunk surfaces.
+   helper-hand and icon-star are transparent and sit over dark overlays, so they are excluded. */
+img[src*="/assets/icon-"]:not([src*="helper-hand"]):not([src*="icon-star"]),
+img[src*="/assets/empty-"]:not([src*="helper-hand"]):not([src*="icon-star"]),
+img[src*="/assets/welcome-"]:not([src*="helper-hand"]):not([src*="icon-star"]) {
+  mix-blend-mode: multiply;
+}
+
+/* Unlayered so these beat Tailwind utilities. */
+:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: var(--focus);
+}
+
+[data-contrast='high'] [data-control] {
+  border: 2px solid var(--ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

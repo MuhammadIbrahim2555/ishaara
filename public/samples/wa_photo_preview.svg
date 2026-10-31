@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844">
+  <!-- Dark image preview background -->
+  <rect width="390" height="844" fill="#0B141B"/>
+  <!-- Image display -->
+  <rect x="20" y="80" width="350" height="600" rx="16" fill="#F43F5E"/>
+  <circle cx="195" cy="380" r="80" fill="#BE123C"/>
+  <text x="195" y="390" fill="#FFFFFF" font-family="Helvetica, Arial, sans-serif" font-size="28" font-weight="bold" text-anchor="middle">Photo Preview</text>
+  <!-- Caption bar -->
+  <rect x="20" y="705" width="350" height="48" rx="24" fill="#1F2C34"/>
+  <text x="45" y="736" fill="#8696A0" font-family="Helvetica, Arial, sans-serif" font-size="18">Add a caption...</text>
+  <!-- Green send button circle at ~(0.9, 0.93) -> cx = 351, cy = 785 -->
+  <circle cx="345" cy="785" r="26" fill="#00A884"/>
+  <polygon points="338,772 358,785 338,798" fill="#FFFFFF"/>
+  <text x="345" y="828" fill="#00A884" font-family="Helvetica, Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle">Send</text>
+</svg>

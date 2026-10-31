@@ -1,0 +1,6 @@
+PLAN.md
+RESEARCH.md
+TASK.md
+dist
+node_modules
+*.tsbuildinfo

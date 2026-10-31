@@ -1,0 +1,116 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Deny all by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isFamilyOwner(fid) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/families/$(fid))
+        && get(/databases/$(database)/documents/families/$(fid)).data.ownerUid == request.auth.uid;
+    }
+
+    function validElderDoc(eid) {
+      let d = request.resource.data;
+      let allowedKeys = [
+        'elderId',
+        'name',
+        'skills',
+        'learnedCount',
+        'weeklyCompleted',
+        'callsSavedThisWeek',
+        'updatedAt',
+        'inviteCode'
+      ];
+      return d.keys().hasOnly(allowedKeys)
+        && d.keys().hasAll(allowedKeys)
+        && d.elderId == eid
+        && d.name is string && d.name.size() <= 40
+        && d.skills is list && d.skills.size() <= 10
+        && d.learnedCount is number && d.learnedCount >= 0
+        && d.weeklyCompleted is number && d.weeklyCompleted >= 0
+        && d.callsSavedThisWeek is number && d.callsSavedThisWeek >= 0
+        && (d.updatedAt is number || d.updatedAt is timestamp)
+        && d.inviteCode is string;
+    }
+
+    match /families/{fid} {
+      // create if request.auth != null && request.resource.data.ownerUid == request.auth.uid and keys <= {ownerUid, ownerName, createdAt}
+      allow create: if isSignedIn()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['ownerUid', 'ownerName', 'createdAt']);
+
+      // read/list only by resource.data.ownerUid == request.auth.uid
+      allow get, list: if isSignedIn()
+        && resource.data.ownerUid == request.auth.uid;
+
+      // update only by ownerUid == request.auth.uid, cannot change ownerUid
+      allow update: if isSignedIn()
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.keys().hasOnly(['ownerUid', 'ownerName', 'createdAt']);
+
+      // delete only by ownerUid == request.auth.uid
+      allow delete: if isSignedIn()
+        && resource.data.ownerUid == request.auth.uid;
+
+      match /elders/{eid} {
+        // read/list by the family owner
+        allow get, list: if isFamilyOwner(fid);
+
+        // create only if caller is the elder and invite exists, is unexpired, and belongs to fid
+        allow create: if isSignedIn()
+          && request.auth.uid == eid
+          && validElderDoc(eid)
+          && exists(/databases/$(database)/documents/invites/$(request.resource.data.inviteCode))
+          && get(/databases/$(database)/documents/invites/$(request.resource.data.inviteCode)).data.familyId == fid
+          && get(/databases/$(database)/documents/invites/$(request.resource.data.inviteCode)).data.expiresAt > request.time;
+
+        // update only by request.auth.uid == eid, cannot change elderId or inviteCode
+        allow update: if isSignedIn()
+          && request.auth.uid == eid
+          && validElderDoc(eid)
+          && request.resource.data.elderId == resource.data.elderId
+          && request.resource.data.inviteCode == resource.data.inviteCode;
+
+        // delete by the elder or the family owner
+        allow delete: if isSignedIn()
+          && (request.auth.uid == eid || isFamilyOwner(fid));
+      }
+    }
+
+    match /invites/{code} {
+      // create only if caller owns request.resource.data.familyId,
+      // expiresAt is timestamp within 30 min of request.time,
+      // keys <= {familyId, ownerUid, elderName, expiresAt}, elderName string <= 40 chars
+      allow create: if isSignedIn()
+        && exists(/databases/$(database)/documents/families/$(request.resource.data.familyId))
+        && get(/databases/$(database)/documents/families/$(request.resource.data.familyId)).data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['familyId', 'ownerUid', 'elderName', 'expiresAt'])
+        && request.resource.data.elderName is string
+        && request.resource.data.elderName.size() <= 40
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.expiresAt > request.time
+        && request.resource.data.expiresAt <= request.time + duration.value(30, 'm');
+
+      // get (not list) by any signed-in user while resource.data.expiresAt > request.time
+      allow get: if isSignedIn()
+        && resource.data.expiresAt > request.time;
+
+      // delete by resource.data.ownerUid == request.auth.uid
+      allow delete: if isSignedIn()
+        && resource.data.ownerUid == request.auth.uid;
+
+      // no list, no update
+      allow list, update: if false;
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "id": "wa_chats",
+  "app": "whatsapp",
+  "titleUr": "چیٹس کی فہرست",
+  "match": {
+    "any": ["chats", "updates", "communities", "calls", "archived", "new chat","چیٹس", "کالز"],
+    "minHits": 2,
+    "none": ["type a message", "last seen"]
+  },
+  "tasks": {
+    "photo": [
+      {
+        "anchor": {
+          "fallback": [0.5, 0.28]
+        },
+        "voice": "wa_photo_1.mp3",
+        "captionUr": "جس کو تصویر بھیجنی ہے، اس کے نام پر دبائیں",
+        "whyUr": "اس سے ان کے ساتھ آپ کی بات چیت کھلے گی",
+        "captionEn": "Tap the name of the person you want to send the photo to",
+        "whyEn": "This opens your chat with them",
+        "labelEn": "Select chat",
+        "expectNext": "wa_chat"
+      }
+    ],
+    "video_call": [
+      {
+        "anchor": {
+          "fallback": [0.5, 0.28]
+        },
+        "voice": "wa_video_1.mp3",
+        "captionUr": "جس کو ویڈیو کال کرنی ہے، اس کے نام پر دبائیں",
+        "whyUr": "اس سے ان کے ساتھ آپ کی بات چیت کھلے گی",
+        "captionEn": "Tap the name of the person you want to call",
+        "whyEn": "This opens your chat with them",
+        "labelEn": "Select chat",
+        "expectNext": "wa_chat"
+      }
+    ]
+  }
+}

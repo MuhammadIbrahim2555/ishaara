@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 390 844" width="390" height="844">
+  <!-- Chat background -->
+  <rect width="390" height="844" fill="#EFEAE2"/>
+  <!-- Top header -->
+  <rect width="390" height="80" fill="#075E54"/>
+  <circle cx="40" cy="45" r="20" fill="#00897B"/>
+  <text x="40" y="52" fill="#FFFFFF" font-family="Helvetica, Arial, sans-serif" font-size="18" text-anchor="middle" font-weight="bold">B</text>
+  <text x="75" y="52" fill="#FFFFFF" font-family="Helvetica, Arial, sans-serif" font-size="20" font-weight="bold">Beta</text>
+  <!-- Video icon at ~(0.78, 0.07) -> cx = 304, cy = 59 -->
+  <circle cx="304" cy="50" r="18" fill="#128C7E"/>
+  <polygon points="296,42 296,58 312,50" fill="#FFFFFF"/>
+  <rect x="314" y="44" width="4" height="12" fill="#FFFFFF"/>
+  <!-- Chat bubbles -->
+  <rect x="20" y="110" width="220" height="60" rx="12" fill="#FFFFFF"/>
+  <text x="35" y="145" fill="#111827" font-family="Helvetica, Arial, sans-serif" font-size="18">Ammi picture bhejein</text>
+  <rect x="150" y="190" width="220" height="60" rx="12" fill="#DCF8C6"/>
+  <text x="165" y="225" fill="#111827" font-family="Helvetica, Arial, sans-serif" font-size="18">Kaise bhejun beta?</text>
+  <!-- Bottom bar -->
+  <rect x="0" y="760" width="390" height="84" fill="#F0F2F5"/>
+  <rect x="15" y="776" width="300" height="52" rx="26" fill="#FFFFFF"/>
+  <text x="40" y="808" fill="#54656F" font-family="Helvetica, Arial, sans-serif" font-size="18">Type a message</text>
+  <!-- Camera icon at ~(0.86, 0.94) -> cx = 335, cy = 794 -->
+  <circle cx="345" cy="802" r="22" fill="#128C7E"/>
+  <rect x="335" y="794" width="20" height="16" rx="3" fill="#FFFFFF"/>
+  <circle cx="345" cy="802" r="5" fill="#128C7E"/>
+</svg>
