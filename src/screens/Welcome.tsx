@@ -7,6 +7,7 @@ import { Screen } from '@/ui/components/Screen'
 import { SpeakButton } from '@/ui/components/SpeakButton'
 import { Localized } from '@/ui/components/UrduText'
 import { bodyClass, useLang } from '@/ui/i18n'
+import { requestPersistence } from '@/ui/persist'
 import { S, type Pair } from '@/ui/strings'
 import { useUiStore, type Lang } from '@/ui/store'
 
@@ -28,6 +29,7 @@ export function Welcome() {
 
   function start() {
     setSettings({ onboarded: true })
+    void requestPersistence()
     navigate('/home', { replace: true })
   }
 

@@ -9,6 +9,9 @@ export default mergeConfig(
     plugins: [basicSsl()],
     // Own dep cache so it doesn't fight the :5173 dev server over node_modules/.vite (caused 504 "Outdated Optimize Dep").
     cacheDir: 'node_modules/.vite-lan',
-    server: { host: true, port: 5443, strictPort: true },
+    // No HMR socket on LAN: self-signed cert blocks the websocket on phones, which made the page reload in a loop.
+    server: { host: true, port: 5443, strictPort: true, hmr: false },
+    // `npm run lan` serves the production build over the same HTTPS LAN setup.
+    preview: { host: true, port: 5443, strictPort: true },
   }),
 )

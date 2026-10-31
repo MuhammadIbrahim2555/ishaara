@@ -13,6 +13,7 @@ import { Localized } from '@/ui/components/UrduText'
 import { cn } from '@/ui/cn'
 import { bodyClass, langAttrs, useLang } from '@/ui/i18n'
 import { IconHelp, IconTrash } from '@/ui/icons'
+import { isPersisted } from '@/ui/persist'
 import { services } from '@/ui/services'
 import { S, type Pair } from '@/ui/strings'
 import { useUiStore, type TextSize } from '@/ui/store'
@@ -29,6 +30,39 @@ const TEXT_OPTIONS: SegmentOption<TextSize>[] = [
 ]
 
 const OTHER_SCREENS: Pair = { ur: 'دوسری اسکرینیں', en: 'Other screens' }
+
+const PERSIST_COPY = {
+  kept: { ur: 'آپ کا ڈیٹا اس فون پر محفوظ ہے', en: 'Your data is kept on this phone' },
+  tip: {
+    ur: 'اسباق محفوظ رکھنے کے لیے اشارہ کو ہوم اسکرین پر شامل کریں',
+    en: 'Add Ishaara to your Home Screen so the phone keeps your lessons',
+  },
+}
+
+/** Whether the browser keeps this app's storage. Shown in the current language only. */
+function PersistenceStatus() {
+  const lang = useLang()
+  const [kept, setKept] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    let alive = true
+    void isPersisted().then((value) => {
+      if (alive) setKept(value)
+    })
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  if (kept === null) return null
+  return (
+    <section className="rounded-panel bg-surface p-5 shadow-raised">
+      <p {...langAttrs(lang)} className={bodyClass(lang)}>
+        {kept ? PERSIST_COPY.kept[lang] : PERSIST_COPY.tip[lang]}
+      </p>
+    </section>
+  )
+}
 
 /** Row title: a label, so both languages show (current one first). Forced to the start edge. */
 const ROW_LABEL_CLASS = 'items-start! text-start!'
@@ -365,6 +399,8 @@ export function Settings() {
           <LangToggle />
         </li>
       </ul>
+
+      <PersistenceStatus />
 
       <FamilySection />
 

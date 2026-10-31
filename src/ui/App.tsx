@@ -17,6 +17,8 @@ import { Progress } from '@/screens/Progress'
 import { Settings } from '@/screens/Settings'
 import { Setup } from '@/screens/Setup'
 import { Welcome } from '@/screens/Welcome'
+import { useRememberRoute, hasPendingRestore } from '@/ui/hooks/useRememberRoute'
+import { requestPersistence } from '@/ui/persist'
 import { useUiStore } from '@/ui/store'
 
 /** Mirrors the settings onto <html> (lang, dir, text size, contrast, simple mode). */
@@ -32,15 +34,29 @@ function useApplySettings() {
   }, [settings])
 }
 
+/** Keeps the last route in sync; restores it on start (see useRememberRoute). */
+function RouteMemory() {
+  useRememberRoute()
+  return null
+}
+
 function Root() {
   const onboarded = useUiStore((s) => s.settings.onboarded)
-  return onboarded ? <Navigate to="/home" replace /> : <Welcome />
+  if (!onboarded) return <Welcome />
+  // A saved route is being restored by RouteMemory: stay blank until it navigates away.
+  if (hasPendingRestore()) return null
+  return <Navigate to="/home" replace />
 }
 
 export default function App() {
   useApplySettings()
+  useEffect(() => {
+    // Already onboarded: ask once per start for persistent storage.
+    if (useUiStore.getState().settings.onboarded) void requestPersistence()
+  }, [])
   return (
     <BrowserRouter>
+      <RouteMemory />
       <Routes>
         <Route path="/" element={<Root />} />
         <Route path="/home" element={<Home />} />
