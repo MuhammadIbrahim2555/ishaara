@@ -119,7 +119,7 @@ function JoinedPanel({ elderName, sharingOn, onSharingChange, onDone }: JoinedPa
       </section>
 
       <section className="flex flex-col gap-3 rounded-panel bg-surface p-5 shadow-raised">
-        <Copy as="h3" p={C.sharedHeading} className="text-ur-body font-bold leading-[1.8]" />
+        <Copy as="h3" p={C.sharedHeading} className="text-ur-body font-bold leading-[2]" />
         <ul className="flex list-disc flex-col gap-2 ps-6">
           {C.sharedItems.map((item) => (
             <li key={item.en}>
@@ -130,7 +130,7 @@ function JoinedPanel({ elderName, sharingOn, onSharingChange, onDone }: JoinedPa
       </section>
 
       <section className="flex flex-col gap-3 rounded-panel bg-surface-sunk p-5">
-        <Copy as="h3" p={C.neverHeading} className="text-ur-body font-bold leading-[1.8]" />
+        <Copy as="h3" p={C.neverHeading} className="text-ur-body font-bold leading-[2]" />
         <Copy p={C.neverBody} />
       </section>
 
@@ -141,7 +141,7 @@ function JoinedPanel({ elderName, sharingOn, onSharingChange, onDone }: JoinedPa
         <Copy
           as="span"
           p={C.sharingLabel}
-          className="min-w-0 flex-1 text-ur-body font-bold leading-[1.8]"
+          className="min-w-0 flex-1 text-ur-body font-bold leading-[2]"
         />
         <Switch.Root
           id="join-sharing"

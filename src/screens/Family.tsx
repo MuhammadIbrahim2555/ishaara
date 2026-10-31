@@ -227,7 +227,7 @@ function SkillRow({ skill }: { skill: ElderSkillShare }) {
           <Copy
             as="span"
             p={TASK_LABEL[skill.task]}
-            className="text-ur-body font-bold leading-[1.8]"
+            className="text-ur-body font-bold leading-[2]"
           />
           {skill.stuck && (
             <Copy
@@ -356,15 +356,21 @@ function InvitePanel({ familyId }: { familyId: string | null }) {
           <div
             role="img"
             aria-label={COPY.qrLabel[lang]}
-            className={cn('rounded-panel bg-page p-4 transition duration-[320ms]', expired && 'opacity-40')}
+            className={cn('w-full max-w-[272px] rounded-panel bg-page p-4 transition duration-[320ms]', expired && 'opacity-40')}
           >
-            <QRCodeSVG value={invite.url} size={240} fgColor="#0F5257" bgColor="#FBF7F0" />
+            <QRCodeSVG
+              value={invite.url}
+              size={240}
+              fgColor="#0F5257"
+              bgColor="#FBF7F0"
+              className="mx-auto h-auto w-full max-w-[240px]"
+            />
           </div>
 
           <p
             dir="ltr"
             lang="en"
-            className="font-latin text-[2.25rem] leading-none font-extrabold tracking-[0.12em] text-ink tabular-nums"
+            className="font-latin text-[1.75rem] leading-none font-extrabold tracking-[0.12em] text-ink tabular-nums sm:text-[2.25rem]"
           >
             {formatCode(invite.code)}
           </p>

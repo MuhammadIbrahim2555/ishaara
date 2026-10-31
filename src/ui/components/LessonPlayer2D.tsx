@@ -12,8 +12,11 @@ const HAND = '/assets/helper-hand.webp'
 /** Fingertip of helper-hand.webp as a fraction of the picture (top-left is 0,0). */
 const TIP_X = 0.24
 const TIP_Y = 0.18
-/** Media area height: fills most of the viewport but stays within 420-720px. */
-export const MEDIA_HEIGHT = 'clamp(420px, 62vh, 720px)'
+/**
+ * Media area height, set in tokens.css: 420-720px on desktop, 300-480px below 640px wide.
+ * A CSS variable so the 3D stage and the 2D frame share one value.
+ */
+export const MEDIA_HEIGHT = 'var(--media-h)'
 
 type Timeline = ReturnType<typeof gsap.timeline>
 
@@ -159,7 +162,7 @@ export function LessonPlayer2D({
 
   return (
     <div className="flex w-full flex-col items-center gap-4">
-      <div className="relative mx-auto overflow-hidden rounded-panel bg-surface-sunk shadow-raised" style={frameStyle}>
+      <div className="relative mx-auto max-w-[calc(100vw_-_2rem)] overflow-hidden rounded-panel bg-surface-sunk shadow-raised" style={frameStyle}>
         <img
           src={imageUrl}
           alt=""
@@ -211,11 +214,8 @@ export function LessonPlayer2D({
             <SpeakButton pair={S.knowIt} voiceId="you_know_this" />
           </div>
           {onAskHint && (
-            <div className="flex w-full max-w-md items-center gap-3">
-              <div className="min-w-0 flex-1">
-                <BigButton variant="secondary" label={S.needHint} onClick={onAskHint} />
-              </div>
-              <SpeakButton pair={S.needHint} voiceId="need_hint" />
+            <div className="flex w-full max-w-md flex-col">
+              <BigButton variant="secondary" label={S.needHint} onClick={onAskHint} />
             </div>
           )}
         </div>

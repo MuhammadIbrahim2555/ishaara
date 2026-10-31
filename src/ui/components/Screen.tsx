@@ -27,7 +27,8 @@ export function Screen({ children, aside, split = false, nav = false, className 
         transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
         className={cn(
           'mx-auto flex min-h-dvh w-full max-w-[480px] flex-col gap-6 px-4 pt-4',
-          nav ? 'pb-32' : 'pb-10',
+          // 76px bottom nav + 16px breathing room + device bottom safe area.
+          nav ? 'pb-[calc(92px_+_env(safe-area-inset-bottom))]' : 'pb-10',
           split && 'lg:max-w-[1120px]',
           className,
         )}

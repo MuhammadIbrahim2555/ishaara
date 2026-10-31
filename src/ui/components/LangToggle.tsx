@@ -36,8 +36,8 @@ export function LangToggle({ compact = false, className }: LangToggleProps) {
             onClick={() => setSettings({ lang: option.value })}
             {...langAttrs(option.value)}
             className={cn(
-              'flex items-center justify-center rounded-pill px-4 font-bold transition-colors duration-[180ms]',
-              compact ? 'min-h-11' : 'min-h-12',
+              'flex items-center justify-center rounded-pill font-bold transition-colors duration-[180ms]',
+              compact ? 'min-h-11 px-3' : 'min-h-12 px-4',
               bodyClass(option.value),
               active ? 'bg-teal-900 text-page' : 'bg-transparent text-teal-900 hover:bg-surface',
             )}

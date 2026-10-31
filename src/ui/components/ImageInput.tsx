@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'r
 import { SAMPLE_SCREENS, loadSampleBlob } from '@/core'
 import type { SampleScreen } from '@/data/samples'
 import { cn } from '@/ui/cn'
-import { bodyClass, langAttrs, otherLang, useLang } from '@/ui/i18n'
+import { bodyClass, langAttrs, useLang } from '@/ui/i18n'
 import { IconImage } from '@/ui/icons'
 import { services } from '@/ui/services'
 import { S, type Pair } from '@/ui/strings'
@@ -130,17 +130,11 @@ export function ImageInput({ onPick, fromShortcut = false, suggestedSampleId }: 
             <span
               {...langAttrs(lang)}
               className={cn(
-                'font-bold leading-[1.4]',
-                lang === 'ur' ? 'text-[48px]' : 'text-[40px]',
+                'font-bold',
+                lang === 'ur' ? 'text-[48px] leading-[2] py-[0.1em]' : 'text-[40px] leading-[1.2]',
               )}
             >
               {S.dikhayein[lang]}
-            </span>
-            <span
-              {...langAttrs(otherLang(lang))}
-              className={cn('text-[18px] leading-snug', otherLang(lang) === 'en' && 'font-latin')}
-            >
-              {S.dikhayein[otherLang(lang)]}
             </span>
           </span>
         </button>

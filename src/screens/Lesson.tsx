@@ -220,14 +220,15 @@ export function Lesson() {
     level !== 3 && step ? (
       <>
         <section className="flex items-start gap-3 rounded-panel bg-surface p-5 shadow-raised">
+          {/* Speak buttons sit at the start edge of their text, inside the panel (never beside a BigButton). */}
+          <div className="flex shrink-0 flex-col gap-3">
+            <SpeakButton pair={captionPair(step)} voiceId={captionId} />
+            {step.whyUr && <SpeakButton pair={whyPair(step)} voiceId={whyId} />}
+          </div>
           <div className="flex min-w-0 flex-1 flex-col gap-2">
             <Copy as="p" variant="title" p={captionPair(step)} />
             <Copy p={whyPair(step)} />
             {step.labelEn && <StepLabel en={step.labelEn} ur={labelUr} lang={lang} />}
-          </div>
-          <div className="flex shrink-0 flex-col gap-3">
-            <SpeakButton pair={captionPair(step)} voiceId={captionId} />
-            {step.whyUr && <SpeakButton pair={whyPair(step)} voiceId={whyId} />}
           </div>
         </section>
 
@@ -276,12 +277,7 @@ export function Lesson() {
       aside={
         <>
           {controls}
-          <div className="flex items-center gap-3">
-            <div className="min-w-0 flex-1">
-              <BigButton label={S.doItMyself} onClick={() => navigate(`/check/${lesson.id}`)} />
-            </div>
-            <SpeakButton pair={S.doItMyself} voiceId="now_you_do" />
-          </div>
+          <BigButton label={S.doItMyself} onClick={() => navigate(`/check/${lesson.id}`)} />
         </>
       }
     >
@@ -292,18 +288,12 @@ export function Lesson() {
   )
 }
 
-/** English step label with its Urdu rendering after a dash, e.g. "Send — بھیجیں". Left to right on purpose. */
+/** Step label in the current language only: the Urdu rendering in Urdu mode (when there is one), else the English. */
 function StepLabel({ en, ur, lang }: { en: string; ur: string | null; lang: Lang }) {
-  if (lang === 'en' || !ur) {
-    return <LatinText as="p" className="text-sub text-ink-soft">{en}</LatinText>
+  if (lang === 'ur' && ur) {
+    return <UrduText as="p" className="text-sub text-ink-soft leading-[1.9]">{ur}</UrduText>
   }
-  return (
-    <p dir="ltr" className="flex flex-wrap items-baseline gap-2 text-sub text-ink-soft">
-      <LatinText as="span">{en}</LatinText>
-      <span aria-hidden="true">—</span>
-      <UrduText as="span">{ur}</UrduText>
-    </p>
-  )
+  return <LatinText as="p" className="text-sub text-ink-soft">{en}</LatinText>
 }
 
 function ControlButton({

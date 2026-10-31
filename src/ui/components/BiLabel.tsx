@@ -1,5 +1,5 @@
 import { cn } from '@/ui/cn'
-import { langAttrs, otherLang, useLang } from '@/ui/i18n'
+import { langAttrs, useLang } from '@/ui/i18n'
 import type { Pair } from '@/ui/strings'
 
 interface BiLabelProps {
@@ -7,21 +7,22 @@ interface BiLabelProps {
   className?: string
 }
 
-/** Primary label in the UI language, with the other language as a smaller sub-label. */
+/**
+ * One line of text in the current UI language only. The other language is never shown.
+ * Urdu (Nastaliq) gets line-height 2 and 0.1em padding so descenders are not clipped.
+ */
 export function BiLabel({ label, className }: BiLabelProps) {
   const lang = useLang()
-  const other = otherLang(lang)
   return (
-    <span className={cn('flex flex-col items-center gap-0.5 text-center', className)}>
-      <span {...langAttrs(lang)} className="text-btn font-bold leading-[1.6]">
-        {label[lang]}
-      </span>
-      <span
-        {...langAttrs(other)}
-        className={other === 'en' ? 'font-latin text-sub leading-snug' : 'text-label leading-[1.9]'}
-      >
-        {label[other]}
-      </span>
+    <span
+      {...langAttrs(lang)}
+      className={cn(
+        'block text-center text-btn font-bold',
+        lang === 'ur' ? 'py-[0.1em] leading-[2]' : 'leading-snug',
+        className,
+      )}
+    >
+      {label[lang]}
     </span>
   )
 }

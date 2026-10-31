@@ -40,6 +40,15 @@
 
   /* Text scale, set on <html> through data-text */
   --scale: 1;
+
+  /* Lesson media height. Phones (below 640px) get a shorter clamp. */
+  --media-h: clamp(420px, 62vh, 720px);
+}
+
+@media (max-width: 639.98px) {
+  :root {
+    --media-h: clamp(300px, 50vh, 480px);
+  }
 }
 
 /* Text size setting */

@@ -89,7 +89,7 @@ export function Library() {
                   <Localized
                     as="span"
                     p={S.tasks[lesson.task]}
-                    className="text-ur-body font-bold leading-[1.8]"
+                    className="text-ur-body font-bold leading-[2]"
                   />
                   <span {...langAttrs(lang)} className="text-label text-ink-soft">
                     {formatDate(lesson.createdAt, lang)}

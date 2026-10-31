@@ -30,11 +30,11 @@
 
   /* Type scale in rem, so the text-size setting scales it. */
   --text-btn: 1.375rem;
-  --text-btn--line-height: 1.6;
+  --text-btn--line-height: 2;
   --text-ur-display: 3rem;
-  --text-ur-display--line-height: 1.7;
+  --text-ur-display--line-height: 2;
   --text-ur-title: 1.875rem;
-  --text-ur-title--line-height: 1.9;
+  --text-ur-title--line-height: 2;
   --text-ur-body: 1.375rem;
   --text-ur-body--line-height: 2.1;
   --text-body: 1.125rem;
@@ -60,12 +60,28 @@
     scrollbar-color: var(--teal-700) var(--surface-sunk);
   }
 
+  /* No sideways scrolling on phones. */
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
   body {
     min-height: 100dvh;
     background: var(--bg);
     color: var(--ink);
     font-size: 1.125rem;
     -webkit-font-smoothing: antialiased;
+  }
+
+  img,
+  video,
+  canvas {
+    max-width: 100%;
+  }
+
+  svg {
+    max-width: 100%;
   }
 
   /* Urdu blocks: Nastaliq, tall line-height. Set by lang or by dir on the element. */

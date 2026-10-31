@@ -139,7 +139,7 @@ function ModelStatus() {
       aria-label={S.modelsTitle[lang]}
       className="flex flex-col gap-3 rounded-panel bg-surface p-5 shadow-raised"
     >
-      <Localized as="p" p={S.modelsTitle} className="text-ur-body font-bold leading-[1.8]" />
+      <Localized as="p" p={S.modelsTitle} className="text-ur-body font-bold leading-[2]" />
       <ul className="flex flex-wrap gap-2">
         {MODEL_ORDER.map((id) => {
           const entry = status[id]
@@ -230,7 +230,7 @@ function FamilySection() {
       aria-label={FAMILY_COPY.title[lang]}
       className="flex flex-col gap-3 rounded-panel bg-surface p-5 shadow-raised"
     >
-      <Localized as="p" p={FAMILY_COPY.title} className="text-ur-body font-bold leading-[1.8]" />
+      <Localized as="p" p={FAMILY_COPY.title} className="text-ur-body font-bold leading-[2]" />
       {linked ? (
         <>
           <Localized
