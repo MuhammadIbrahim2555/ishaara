@@ -41,11 +41,45 @@ export function createCapture(): CaptureService {
     },
 
     /**
-     * Removes ?from=shortcut from the current URL via history.replaceState without reloading.
+     * True when the app was launched or opened via Android Web Share Target (?from=share).
+     */
+    isShareLaunch(): boolean {
+      if (typeof window === 'undefined') return false
+      try {
+        return new URLSearchParams(window.location.search).get('from') === 'share'
+      } catch {
+        return false
+      }
+    },
+
+    /**
+     * Reads and deletes the latest shared image from cache storage 'ishaara-share'.
+     * Returns null if absent, unsupported, or on error. Never throws.
+     */
+    async takeSharedImage(): Promise<Blob | null> {
+      if (typeof caches === 'undefined' || !caches.open) {
+        return null
+      }
+      try {
+        const cache = await caches.open('ishaara-share')
+        const response = await cache.match('/shared/latest')
+        if (!response) {
+          return null
+        }
+        const blob = await response.blob()
+        await cache.delete('/shared/latest')
+        return blob
+      } catch {
+        return null
+      }
+    },
+
+    /**
+     * Removes ?from=shortcut or ?from=share from the current URL via history.replaceState without reloading.
      */
     consumeShortcutParam(): void {
       if (typeof window === 'undefined') return
-      if (!this.isShortcutLaunch()) return
+      if (!this.isShortcutLaunch() && !this.isShareLaunch()) return
 
       try {
         const url = new URL(window.location.href)

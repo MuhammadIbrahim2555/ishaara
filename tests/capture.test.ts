@@ -9,6 +9,7 @@ describe('createCapture', () => {
   afterEach(() => {
     vi.useRealTimers()
     vi.restoreAllMocks()
+    vi.unstubAllGlobals()
   })
 
   it('reads first image blob from navigator.clipboard', async () => {
@@ -64,6 +65,98 @@ describe('createCapture', () => {
       '',
       '/app?task=photo'
     )
+  })
+
+  it('detects and consumes ?from=share param via history.replaceState', () => {
+    window.history.pushState({}, '', '/ask/photo?from=share')
+
+    const replaceStateSpy = vi.spyOn(window.history, 'replaceState')
+    const capture = createCapture()
+
+    expect(capture.isShareLaunch()).toBe(true)
+    expect(capture.isShortcutLaunch()).toBe(false)
+
+    capture.consumeShortcutParam()
+    expect(replaceStateSpy).toHaveBeenCalledWith({}, '', '/ask/photo')
+  })
+
+  it('returns null for takeSharedImage when caches API is absent or unsupported', async () => {
+    const originalCaches = (globalThis as unknown as { caches?: unknown }).caches
+    delete (globalThis as unknown as { caches?: unknown }).caches
+
+    try {
+      const capture = createCapture()
+      const result = await capture.takeSharedImage()
+      expect(result).toBeNull()
+    } finally {
+      if (originalCaches !== undefined) {
+        ;(globalThis as unknown as { caches?: unknown }).caches = originalCaches
+      }
+    }
+  })
+
+  it('returns null for takeSharedImage when /shared/latest is absent in cache', async () => {
+    const mockCache = {
+      match: vi.fn(async (key: string) => {
+        if (key === '/shared/latest') return undefined
+        return undefined
+      }),
+      delete: vi.fn(async () => true),
+    }
+
+    vi.stubGlobal('caches', {
+      open: vi.fn(async (name: string) => {
+        if (name === 'ishaara-share') return mockCache
+        throw new Error('Unknown cache')
+      }),
+    })
+
+    const capture = createCapture()
+    const result = await capture.takeSharedImage()
+    expect(result).toBeNull()
+    expect(mockCache.match).toHaveBeenCalledWith('/shared/latest')
+    expect(mockCache.delete).not.toHaveBeenCalled()
+  })
+
+  it('reads and deletes /shared/latest from ishaara-share cache on takeSharedImage', async () => {
+    const sharedBlob = new Blob(['shared-image-data'], { type: 'image/png' })
+    const mockResponse = {
+      blob: vi.fn(async () => sharedBlob),
+    }
+
+    let cacheHasEntry = true
+    const mockCache = {
+      match: vi.fn(async (key: string) => {
+        if (key === '/shared/latest' && cacheHasEntry) {
+          return mockResponse
+        }
+        return undefined
+      }),
+      delete: vi.fn(async (key: string) => {
+        if (key === '/shared/latest') {
+          cacheHasEntry = false
+          return true
+        }
+        return false
+      }),
+    }
+
+    vi.stubGlobal('caches', {
+      open: vi.fn(async (name: string) => {
+        if (name === 'ishaara-share') return mockCache
+        throw new Error('Unknown cache')
+      }),
+    })
+
+    const capture = createCapture()
+    const result = await capture.takeSharedImage()
+    expect(result).toBe(sharedBlob)
+    expect(mockResponse.blob).toHaveBeenCalledTimes(1)
+    expect(mockCache.delete).toHaveBeenCalledWith('/shared/latest')
+
+    // Verify entry is deleted after read
+    const secondResult = await capture.takeSharedImage()
+    expect(secondResult).toBeNull()
   })
 
   it('debounces onReturn callback across visibilitychange and focus events', () => {

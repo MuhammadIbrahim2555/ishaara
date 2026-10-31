@@ -22,6 +22,8 @@ import { detectSensitive } from './safety'
 
 export interface EngineDependencies {
   ocr: OcrFn
+  /** Loads the OCR models without recognising anything. Preferred by warmUp when present. */
+  ocrInit?: () => Promise<void>
   library: LibraryService
   maps?: ScreenMap[]
   vision?: (img: Blob, phrase: string, near?: [number, number]) => Promise<Target | null>
@@ -317,9 +319,13 @@ export function createEngine(deps: EngineDependencies): Engine {
           message: 'Warming up OCR engine...',
         })
         try {
-          // Warm up OCR with a tiny blank blob
-          const dummy = new Blob([''], { type: 'image/png' })
-          await deps.ocr(dummy).catch(() => {})
+          if (deps.ocrInit) {
+            await deps.ocrInit()
+          } else {
+            // Fallback: warm up OCR with a tiny blank blob
+            const dummy = new Blob([''], { type: 'image/png' })
+            await deps.ocr(dummy).catch(() => {})
+          }
           emitProgress({
             model: 'ocr',
             status: 'ready',

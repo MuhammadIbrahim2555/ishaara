@@ -148,7 +148,11 @@ export interface CaptureService {
   readClipboardImage(): Promise<Blob | null>
   /** True when the app was opened by the Back-Tap Shortcut (?from=shortcut). */
   isShortcutLaunch(): boolean
-  /** Removes ?from=shortcut from the URL (history.replaceState). */
+  /** True when the app was opened via Web Share Target (?from=share). */
+  isShareLaunch(): boolean
+  /** Reads and deletes the latest shared image from cache storage 'ishaara-share'. Returns null if absent or unsupported. */
+  takeSharedImage(): Promise<Blob | null>
+  /** Removes ?from=shortcut and ?from=share from the URL (history.replaceState). */
   consumeShortcutParam(): void
   /** Calls cb when the app becomes visible/focused again; returns unsubscribe. */
   onReturn(cb: () => void): () => void

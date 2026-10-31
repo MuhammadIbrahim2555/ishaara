@@ -17,9 +17,11 @@ function isRemembered(pathname: string): boolean {
   return REMEMBERED.some((pattern) => pattern.test(pathname))
 }
 
-function isShortcutUrl(search: string): boolean {
+/** Shortcut and Android Share launches are never saved or restored. */
+function isLaunchUrl(search: string): boolean {
   try {
-    return new URLSearchParams(search).get('from') === 'shortcut'
+    const from = new URLSearchParams(search).get('from')
+    return from === 'shortcut' || from === 'share'
   } catch {
     return false
   }
@@ -45,12 +47,12 @@ function writeSaved(pathname: string): void {
 /**
  * Decided once, when the module loads, before any route renders: the saved route to return to,
  * or null. Only applies when the app opens on "/", the user is onboarded, and the launch is not
- * a Shortcut launch (the Shortcut always wins).
+ * a Shortcut or Share launch (those always win).
  */
 let pendingStart: string | null = (() => {
   if (typeof window === 'undefined') return null
   if (window.location.pathname !== '/') return null
-  if (isShortcutUrl(window.location.search)) return null
+  if (isLaunchUrl(window.location.search)) return null
   if (!useUiStore.getState().settings.onboarded) return null
   return readSaved()
 })()
@@ -69,7 +71,7 @@ export function useRememberRoute(): void {
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (!isRemembered(pathname) || isShortcutUrl(search)) return
+    if (!isRemembered(pathname) || isLaunchUrl(search)) return
     writeSaved(pathname)
   }, [pathname, search])
 

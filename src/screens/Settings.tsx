@@ -142,10 +142,10 @@ function ToggleRow({
 const MODEL_ORDER: ModelId[] = ['ocr', 'whisper', 'florence', 'translate', 'tts']
 
 const STATE_TEXT: Record<LoadProgress['status'], Pair> = {
-  idle: { ur: 'لوڈ نہیں ہوا', en: 'Not loaded' },
+  idle: { ur: 'ضرورت پر لوڈ ہوگا', en: 'Loads when needed' },
   downloading: { ur: 'ڈاؤن لوڈ ہو رہا ہے', en: 'Downloading' },
   ready: { ur: 'تیار', en: 'Ready' },
-  error: { ur: 'خرابی', en: 'Error' },
+  error: { ur: 'دستیاب نہیں', en: 'Not available' },
 }
 
 function downloadingText(percent: number): Pair {

@@ -9,11 +9,24 @@ import { Stepper } from '@/ui/components/Stepper'
 import { cn } from '@/ui/cn'
 import { bodyClass, langAttrs, useLang } from '@/ui/i18n'
 import { IconChevron, IconShare } from '@/ui/icons'
+import { useInstallPrompt, type InstallPrompt } from '@/ui/hooks/useInstallPrompt'
 import { S, type Pair } from '@/ui/strings'
 
 const STEP_COUNT = S.setupSteps.length
-/** Screen 0 is the Shortcut card, 1..STEP_COUNT the steps, the last one the test and Android note. */
+/** iPhone flow: screen 0 is the Shortcut card, 1..STEP_COUNT the steps, the last one the test. */
 const FINAL_SCREEN = STEP_COUNT + 1
+
+type Platform = 'ios' | 'android' | 'other'
+
+function detectPlatform(): Platform {
+  if (typeof navigator === 'undefined') return 'other'
+  const ua = navigator.userAgent
+  if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+    return 'ios'
+  }
+  if (/Android/i.test(ua)) return 'android'
+  return 'other'
+}
 
 const HOME_APPS = [
   'Messages',
@@ -131,6 +144,8 @@ function StepMock({ step }: { step: number }) {
 /** Shortcut card: explains the Shortcut and holds the not-yet-live install button. */
 function ShortcutCard() {
   const shortcutUrl = `${window.location.origin}/ask/photo?from=shortcut`
+  const iCloudUrl = import.meta.env.VITE_IOS_SHORTCUT_URL
+  const hasLink = typeof iCloudUrl === 'string' && iCloudUrl.trim() !== ''
   return (
     <section className="flex flex-col gap-5 rounded-panel bg-surface p-5 shadow-raised">
       <Copy as="h2" variant="title" p={S.shortcutTitle} />
@@ -165,22 +180,71 @@ function ShortcutCard() {
           ))}
         </ol>
       </details>
-      <BigButton disabled label={S.addShortcut} icon={<IconShare />} />
+      {hasLink ? (
+        <BigButton
+          label={S.addShortcut}
+          icon={<IconShare />}
+          onClick={() => {
+            window.location.href = iCloudUrl
+          }}
+        />
+      ) : (
+        <div className="flex flex-col gap-2">
+          <BigButton disabled label={S.shortcutNotAdded} icon={<IconShare />} />
+          <Copy as="span" p={S.shortcutNotAddedNote} className="text-center text-ink-soft" />
+        </div>
+      )}
     </section>
   )
 }
 
-/** Family guide: Shortcut card, then six phone steps, then a test and an Android note. */
+/** Android card: what the family does on Android, plus the install button when the browser offered it. */
+function AndroidCard({ install }: { install: InstallPrompt }) {
+  return (
+    <section className="flex w-full flex-col gap-5 rounded-panel bg-surface p-5 text-start shadow-raised">
+      <Copy as="h2" p={S.androidTitle} className="font-bold" />
+      <Copy p={S.androidBody} />
+      {install.canInstall && (
+        <BigButton label={S.installApp} icon={<IconShare />} onClick={() => void install.install()} />
+      )}
+    </section>
+  )
+}
+
+/**
+ * Family guide. iPhone: Shortcut card, then six phone steps, then the test.
+ * Android: the install and share card, then the test. Other devices: both sections on the first screen.
+ */
 export function Setup() {
   const navigate = useNavigate()
+  const [platform] = useState<Platform>(detectPlatform)
+  const install = useInstallPrompt()
+  const showIos = platform !== 'android'
+  const showAndroid = platform !== 'ios'
+  const lastScreen = showIos ? FINAL_SCREEN : 1
   const [screen, setScreen] = useState(0)
-  const stepData = screen >= 1 && screen <= STEP_COUNT ? S.setupSteps[screen - 1] : undefined
+  const stepData = showIos && screen >= 1 && screen <= STEP_COUNT ? S.setupSteps[screen - 1] : undefined
 
   return (
     <Screen>
       <BackBar title={S.setup} />
 
-      {screen === 0 && <ShortcutCard />}
+      {screen === 0 && (
+        <div className="flex flex-col gap-6">
+          {showIos && (
+            <div className="flex flex-col gap-3">
+              {platform === 'other' && <Copy as="h2" variant="title" p={S.headingIphone} />}
+              <ShortcutCard />
+            </div>
+          )}
+          {showAndroid && (
+            <div className="flex flex-col gap-3">
+              {platform === 'other' && <Copy as="h2" variant="title" p={S.headingAndroid} />}
+              <AndroidCard install={install} />
+            </div>
+          )}
+        </div>
+      )}
 
       {stepData && (
         <>
@@ -193,19 +257,15 @@ export function Setup() {
         </>
       )}
 
-      {screen === FINAL_SCREEN && (
+      {screen === lastScreen && (
         <section className="flex flex-col items-center gap-6 text-center">
           <img src="/assets/icon-star.webp" alt="" aria-hidden="true" className="size-32 object-contain" />
           <Copy variant="title" p={S.setupTry} />
-          <section className="w-full rounded-panel bg-surface p-5 text-start shadow-raised">
-            <Copy as="h2" p={S.androidTitle} className="font-bold" />
-            <Copy p={S.androidBody} />
-          </section>
         </section>
       )}
 
       <div className="flex flex-col gap-3">
-        {screen === FINAL_SCREEN ? (
+        {screen === lastScreen ? (
           <BigButton label={S.goHome} onClick={() => navigate('/home')} />
         ) : (
           <BigButton label={S.next} onClick={() => setScreen(screen + 1)} />

@@ -191,6 +191,7 @@ export function getServices({ mock }: { mock: boolean }): AppServices {
 
   const rawEngine = createEngine({
     ocr: (img) => metrics.time('ocr', () => ocrClient.recognize(img)),
+    ocrInit: () => ocrClient.init(),
     library,
     maps: SCREEN_MAPS,
     vision,

@@ -118,6 +118,7 @@ export const S = {
   dropHere: { ur: 'اسکرین کی تصویر یہاں گھسیٹیں', en: 'Drag a screenshot here' },
   pickPicture: { ur: 'براہ کرم تصویر چنیں', en: 'Please choose a picture' },
   sampleUnavailable: { ur: 'یہ نمونہ ابھی دستیاب نہیں ہے', en: 'This sample is not available yet' },
+  shareAgain: { ur: 'اسکرین شاٹ دوبارہ شیئر کریں', en: 'Share the screenshot again' },
 
   // Ask
   redactTitle: { ur: 'کیا کچھ چھپانا ہے؟', en: 'Hide anything private?' },
@@ -207,7 +208,12 @@ export const S = {
     { ur: 'Open URL شامل کریں اور یہ پتا لکھیں', en: 'Add Open URL and type this address:' },
     { ur: 'اس شارٹ کٹ کا نام Ishaara رکھیں', en: 'Name the Shortcut Ishaara.' },
   ] satisfies Pair[],
-  addShortcut: { ur: 'شارٹ کٹ شامل کریں', en: 'Add the Shortcut (link coming soon)' },
+  addShortcut: { ur: 'شارٹ کٹ شامل کریں', en: 'Add the Shortcut' },
+  shortcutNotAdded: { ur: 'شارٹ کٹ لنک ابھی شامل نہیں', en: 'Shortcut link not added yet' },
+  shortcutNotAddedNote: {
+    ur: 'اسے ایک بار بنانے کے لیے نیچے دیے گئے قدم استعمال کریں',
+    en: 'Use the steps below to build it once',
+  },
   setupSteps: [
     {
       title: { ur: 'ترتیبات کھولیں', en: 'Open Settings' },
@@ -244,8 +250,11 @@ export const S = {
     },
   ] satisfies { title: Pair; caption: Pair }[],
   androidTitle: { ur: 'اینڈرائیڈ فون', en: 'Android phone' },
+  headingIphone: { ur: 'آئی فون', en: 'iPhone' },
+  headingAndroid: { ur: 'اینڈرائیڈ', en: 'Android' },
+  installApp: { ur: 'اشارہ انسٹال کریں', en: 'Install Ishaara' },
   androidBody: {
-    ur: 'زیادہ تر اینڈرائیڈ فونز میں پشت پر ٹیپ کی سہولت نہیں ہوتی۔ اسکرین شاٹ لینے کے بعد اشارہ کھولیں اور "میری اسکرین دکھائیں" دبائیں۔',
-    en: 'Most Android phones have no back-tap option. After taking a screenshot, open Ishaara and tap "Show my screen".',
+    ur: 'اینڈرائیڈ پر: Chrome مینو سے "ایپ انسٹال کریں" چن کر اشارہ کو ہوم اسکرین پر شامل کریں۔ پھر گیلری میں اسکرین شاٹ کھولیں، شیئر دبائیں اور اشارہ چنیں۔',
+    en: 'On Android: add Ishaara to the Home Screen (Chrome menu → Install app), then in Gallery open a screenshot → Share → Ishaara.',
   },
 }

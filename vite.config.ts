@@ -9,6 +9,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       registerType: 'autoUpdate',
       manifest: {
         name: 'Ishaara',
@@ -19,43 +22,27 @@ export default defineConfig({
         theme_color: '#0F5257',
         background_color: '#FBF7F0',
         display: 'standalone',
-        icons: [],
+        start_url: '/',
+        scope: '/',
+        icons: [
+          { src: '/assets/logo-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/assets/logo-512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/assets/logo-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+        share_target: {
+          action: '/share-target',
+          method: 'POST',
+          enctype: 'multipart/form-data',
+          params: {
+            title: 'title',
+            text: 'text',
+            files: [{ name: 'image', accept: ['image/*'] }],
+          },
+        },
       },
-      workbox: {
+      injectManifest: {
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         globIgnores: ['**/*.wasm'],
-        runtimeCaching: [
-          {
-            urlPattern: /huggingface\.co|cdn\.jsdelivr\.net|tessdata/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'ishaara-models',
-              expiration: {
-                maxAgeSeconds: 30 * 24 * 60 * 60,
-              },
-            },
-          },
-          {
-            urlPattern: /\.wasm$/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'ishaara-runtime',
-              expiration: {
-                maxAgeSeconds: 30 * 24 * 60 * 60,
-              },
-            },
-          },
-          {
-            urlPattern: /\/voice\//,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'ishaara-voice',
-              expiration: {
-                maxAgeSeconds: 30 * 24 * 60 * 60,
-              },
-            },
-          },
-        ],
       },
     }),
   ],

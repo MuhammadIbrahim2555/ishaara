@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { BackBar } from '@/ui/components/BackBar'
 import { BigButton } from '@/ui/components/BigButton'
 import { BiLabel } from '@/ui/components/BiLabel'
 import { FirstRunProgress } from '@/ui/components/FirstRunProgress'
+import { Hint } from '@/ui/components/Hint'
 import { ImageInput } from '@/ui/components/ImageInput'
 import { AskFamilyPanel, SafetyPanel } from '@/ui/components/Outcome'
 import { RedactEditor } from '@/ui/components/RedactEditor'
@@ -60,8 +61,29 @@ export function Ask() {
   const [image, setImage] = useState<Blob | null>(null)
   const [redactions, setRedactions] = useState<RedactRect[]>([])
   const [drawing, setDrawing] = useState(true)
+  const [shareMissed, setShareMissed] = useState(false)
+  const shareChecked = useRef(false)
   const imageUrl = useObjectUrl(image)
   const fromShortcut = searchParams.get('from') === 'shortcut'
+
+  // Android Share (from=share): the service worker stored the image. Take it once and go straight to hiding.
+  // The ref guards against StrictMode's double effect run, since takeSharedImage deletes the image.
+  useEffect(() => {
+    if (shareChecked.current || !services.capture.isShareLaunch()) return
+    shareChecked.current = true
+    void (async () => {
+      const shared = await services.capture.takeSharedImage()
+      services.capture.consumeShortcutParam()
+      if (shared) {
+        setImage(shared)
+        setRedactions([])
+        setDrawing(true)
+        setPhase('redact')
+      } else {
+        setShareMissed(true)
+      }
+    })()
+  }, [])
 
   if (!isTaskId(task)) return <Navigate to="/home" replace />
 
@@ -118,6 +140,8 @@ export function Ask() {
   return (
     <Screen split={redacting} aside={redactControls}>
       <BackBar title={S.tasks[task]} />
+
+      {phase === 'input' && shareMissed && <Hint pair={S.shareAgain} />}
 
       {phase === 'input' && (
         <ImageInput fromShortcut={fromShortcut} onPick={pick} suggestedSampleId="wa_chat" />

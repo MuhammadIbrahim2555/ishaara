@@ -16,10 +16,10 @@ import { S } from '@/ui/strings'
 const MODEL_IDS: ModelId[] = ['ocr', 'whisper', 'florence', 'translate', 'tts']
 
 const STATUS_TEXT: Record<LoadProgress['status'], string> = {
-  idle: 'Not loaded',
+  idle: 'Loads when needed',
   downloading: 'Downloading',
   ready: 'Ready',
-  error: 'Error',
+  error: 'Not available',
 }
 
 const STATUS_CLASS: Record<LoadProgress['status'], string> = {
